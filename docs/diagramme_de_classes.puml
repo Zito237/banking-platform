@@ -1,0 +1,202 @@
+@startuml
+!theme plain
+skinparam classAttributeIconSize 0
+skinparam class {
+    BackgroundColor White
+    ArrowColor Black
+    BorderColor Black
+}
+skinparam stereotypeCBackgroundColor LightGreen
+skinparam stereotypeSBackgroundColor LightBlue
+
+left to right direction
+
+package "Bounded Context : Customer" {
+    class Customer <<Aggregate Root>> {
+        +id : UUID
+        +firstName : String
+        +lastName : String
+        +dateOfBirth : Date
+        +email : String
+        +phone : String
+        +address : String
+        +nationalIdNumber : String
+        +kycStatus : KycStatus {PENDING, VERIFIED, REJECTED}
+        +operatorId : UUID
+        +createdAt : DateTime
+    }
+
+    class DocumentReference <<Entity>> {
+        +id : UUID
+        +documentType : DocumentType {ID_CARD, PASSPORT, PROOF_OF_RESIDENCE, PAYSLIP, BANK_STATEMENT, WORK_CONTRACT}
+        +fileUrl : String
+        +verified : boolean
+    }
+
+    Customer "1" *-- "0..*" DocumentReference : composition
+}
+
+package "Bounded Context : Account" {
+    class Account <<Aggregate Root>> {
+        +id : UUID
+        +accountNumber : String [unique]
+        +customerId : UUID
+        +operatorId : UUID
+        +accountType : AccountType {CURRENT, SAVINGS, WALLET}
+        +balance : BigDecimal
+        +currency : String [XAF]
+        +ceiling : BigDecimal
+        +status : AccountStatus {ACTIVE, BLOCKED, CLOSED}
+        +openedAt : DateTime
+        +version : Long
+    }
+
+    Customer "1" -- "0..*" Account
+}
+
+package "Bounded Context : Transaction" {
+    class Transaction <<Aggregate Root>> {
+        +id : UUID
+        +reference : String [unique]
+        +type : TransactionType {DEPOSIT, WITHDRAWAL, TRANSFER_INTRA, TRANSFER_INTER, REPAYMENT}
+        +amount : BigDecimal
+        +currency : String
+        +fees : BigDecimal
+        +sourceAccountId : UUID [nullable]
+        +destinationAccountId : UUID [nullable]
+        +status : TransactionStatus {PENDING, COMPLETED, FAILED, COMPENSATED}
+        +sagaId : UUID
+        +createdAt : DateTime
+    }
+
+    Account "1" -- "0..*" Transaction
+}
+
+package "Bounded Context : Loan" {
+    class LoanApplication <<Aggregate Root>> {
+        +id : UUID
+        +customerId : UUID
+        +requestedAmount : BigDecimal
+        +purpose : String
+        +status : LoanAppStatus {SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED}
+        +submittedAt : DateTime
+        +decisionReason : String
+    }
+
+    class Loan <<Aggregate Root>> {
+        +id : UUID
+        +applicationId : UUID
+        +principal : BigDecimal
+        +interestRate : double
+        +termMonths : int
+        +status : LoanStatus {ACTIVE, PAID_OFF, DEFAULTED}
+        +disbursedAt : DateTime
+    }
+
+    class RepaymentSchedule <<Aggregate Root>> {
+        +id : UUID
+        +loanId : UUID
+    }
+
+    class Installment <<Entity>> {
+        +id : UUID
+        +dueDate : Date
+        +amount : BigDecimal
+        +principalPart : BigDecimal
+        +interestPart : BigDecimal
+        +status : InstallmentStatus {PENDING, PAID, LATE}
+        +paidAt : DateTime [nullable]
+    }
+
+    LoanApplication "1" -- "0..1" Loan
+    Loan "1" *-- "1" RepaymentSchedule
+    RepaymentSchedule "1" *-- "1..*" Installment : composition
+    Customer "1" -- "0..*" LoanApplication
+}
+
+package "Bounded Context : Operator" {
+    class Operator <<Aggregate Root>> {
+        +id : UUID
+        +name : String
+        +code : String [unique]
+        +country : String
+        +status : OperatorStatus {ACTIVE, SUSPENDED}
+    }
+
+    class BusinessRule <<Entity>> {
+        +id : UUID
+        +operatorId : UUID
+        +ruleType : RuleType {COMMISSION, CEILING, VALIDATION}
+        +value : String
+    }
+
+    Operator "1" *-- "1..*" BusinessRule : composition
+    Operator "1" -- "0..*" Account
+    Operator "1" -- "0..*" Customer
+}
+
+package "Bounded Context : IAM" {
+    class User <<Aggregate Root>> {
+        +id : UUID
+        +username : String [unique]
+        +passwordHash : String
+        +email : String
+        +enabled : boolean
+        +operatorId : UUID [nullable]
+        +linkedCustomerId : UUID [nullable]
+    }
+
+    class Role <<Entity>> {
+        +id : UUID
+        +name : RoleName {CLIENT, OPERATOR, ADMIN}
+    }
+
+    User "*" -- "*" Role : user_roles
+}
+
+package "Bounded Context : Document Processing" {
+    class DocumentSubmission {
+        +id : UUID
+        +customerId : UUID
+        +documentType : String
+        +fileUrl : String
+        +status : DocStatus {RECEIVED, PROCESSING, DONE, FAILED}
+        +uploadedAt : DateTime
+    }
+
+    class ExtractionResult {
+        +id : UUID
+        +documentId : UUID
+        +extractedFields : JSON
+        +confidence : float
+        +ocrEngine : String
+        +processedAt : DateTime
+    }
+
+    DocumentSubmission "1" -- "0..1" ExtractionResult
+}
+
+package "Bounded Context : Notification" {
+    class Notification {
+        +id : UUID
+        +recipientId : UUID
+        +channel : Channel {EMAIL, SMS, PUSH}
+        +type : String
+        +content : String
+        +status : NotifStatus {QUEUED, SENT, FAILED}
+        +sentAt : DateTime
+    }
+}
+
+package "Bounded Context : Audit" {
+    class AuditLog {
+        +id : UUID
+        +actor : String
+        +action : String
+        +resource : String
+        +payload : JSON
+        +timestamp : DateTime
+    }
+}
+
+@enduml
