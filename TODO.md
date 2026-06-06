@@ -1,9 +1,9 @@
 # TODO
 
-- [x] Corriger l’affichage Eureka pour éviter que les services s’enregistrent sous le hostname machine (ex: “TAFEMPA”).
-- [x] Ajouter dans `config-repo/operator-service.properties` les propriétés Eureka nécessaires pour forcer `localhost` (hostname + instance-id).
-- [ ] (Option) Ajouter la même correction dans `config-repo/application.properties` pour tous les microservices si souhaité.
+- [ ] Confirm root cause of Maven errors for customer-service POM dependencies missing versions.
+- [ ] Implement robust fix by adding explicit versions for missing dependency coordinates in customer-service/pom.xml.
+- [ ] Re-run `./mvnw spring-boot:run` for customer-service to verify build passes.
+- [x] Added explicit Spring Boot dependency versions in customer-service/pom.xml to resolve missing version errors.
 
-- [ ] Redémarrer `discovery-server` puis `operator-service` et vérifier que Eureka affiche bien `localhost:operator-service:8082`.
-- [ ] Mettre à jour ce fichier pour marquer les étapes complétées.
+- [ ] If build still fails, inspect effective POM and parent resolution.
 
