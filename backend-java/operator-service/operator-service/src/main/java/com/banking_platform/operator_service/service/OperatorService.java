@@ -58,10 +58,24 @@ public class OperatorService {
 
         // Ajout des regles metier
         for (BusinessRuleRequest ruleRequest : request.getRules()) {
-            RuleType ruleType = RuleType.valueOf(ruleRequest.getRuleType().toUpperCase());
+            String raw = ruleRequest.getRuleType();
+            if (raw == null) {
+                throw new RuntimeException("Le type de regle est obligatoire");
+            }
+
+            String normalized = raw.trim().toUpperCase();
+
+            RuleType ruleType;
+            try {
+                ruleType = RuleType.valueOf(normalized);
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Type de regle invalide: '" + raw + "'. Valeurs autorisees: COMMISSION, CEILING, VALIDATION");
+            }
+
             BusinessRule rule = new BusinessRule(ruleType, ruleRequest.getValue());
             operator.addRule(rule);
         }
+
 
         // Sauvegarde
         Operator saved = operatorRepository.save(operator);
