@@ -1,0 +1,24 @@
+Objectif: diagnostiquer le 500 sur http://localhost:8081/h2-console dans auth-service.
+
+1) Vérifier que Config Server renvoie bien la config H2
+   - Ouvrir: http://localhost:8888/auth-service/default
+   - Confirmer la présence de:
+     spring.datasource.url=jdbc:h2:mem:authdb
+     spring.datasource.driver-class-name=org.h2.Driver
+     spring.jpa.hibernate.ddl-auto=create-drop
+     spring.h2.console.enabled=true
+
+2) Vérifier le démarrage d’auth-service
+   - Dans le terminal/log auth-service, chercher la première erreur avec:
+     - Caused by:
+     - BeanCreationException
+     - Failed to configure a DataSource
+     - Driver
+     - org.h2.console
+
+3) Le fix le plus courant si H2 console est appelé mais pas autorisé
+   - Ajouter des règles explicites dans SecurityConfig pour autoriser /h2-console/**.
+
+A FAIRE PROCHAINE ETAPE
+- Copier ici les ~30 lignes de stacktrace autour de l’erreur au moment d’accéder à /h2-console.
+

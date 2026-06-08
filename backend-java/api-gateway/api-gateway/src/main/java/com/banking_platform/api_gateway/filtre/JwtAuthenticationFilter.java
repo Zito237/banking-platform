@@ -1,3 +1,4 @@
+
 package com.banking_platform.api_gateway.filtre;
 
 /*
@@ -44,12 +45,12 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
 
-    // Liste des chemins publics (pas besoin de JWT)
     private static final List<String> PUBLIC_PATHS = List.of(
             "/auth/login",
             "/auth/register",
             "/actuator/health",
-            "/actuator/info"
+            "/actuator/info",
+            "/h2-console" // permet d'accéder à la console H2 sans JWT
     );
 
     // La clé secrète vient du fichier de configuration (config-repo/api-gateway.yml)
