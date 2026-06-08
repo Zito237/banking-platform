@@ -1,0 +1,76 @@
+# ===== Git ignores for Banking Platform (multi-module Java + Node/Python + Docker/K8s) =====
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.code-workspace
+*.iml
+
+# Java / Maven
+*.class
+target/
+*/target/
+
+# Maven wrapper artifacts (if generated)
+.mvn/
+.mvn/wrapper/maven-wrapper.jar
+
+# Logs
+*.log
+logs/
+
+# Env files / secrets
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.crt
+
+# Build outputs (generic)
+build/
+out/
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyd
+*.pyo
+*.pyd
+.pytest_cache/
+.venv/
+venv/
+ENV/
+env/
+pip-wheel-metadata/
+dist/
+build/
+
+# Python tooling caches
+.mypy_cache/
+.ruff_cache/
+
+# Docker / Kubernetes local overrides (optional)
+docker-compose.override.yml
+
+# VSCode settings (if tracked)
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+
+# Misc
+*.swp
+*.swo
+*~
+
