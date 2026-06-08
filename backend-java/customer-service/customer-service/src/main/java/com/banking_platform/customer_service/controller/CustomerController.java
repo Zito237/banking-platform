@@ -54,6 +54,15 @@ public class CustomerController {
     }
 
     /**
+     * GET /customers/{id}/exists
+     * Verifie si un client existe (utilise par account-service via Feign).
+     */
+    @GetMapping("/customers/{id}/exists")
+    public ResponseEntity<Boolean> existsById(@PathVariable UUID id) {
+        return ResponseEntity.ok(customerService.existsById(id));
+    }
+
+    /**
      * POST /documents
      * Soumet un document pour un client.
      * Publie automatiquement un evenement DocumentSubmitted sur RabbitMQ
