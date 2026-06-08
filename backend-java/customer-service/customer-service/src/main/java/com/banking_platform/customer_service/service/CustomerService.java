@@ -83,6 +83,13 @@ public class CustomerService {
     }
 
     /**
+     * Verifie si un client existe par son ID.
+     */
+    public boolean existsById(UUID id) {
+        return customerRepository.existsById(id);
+    }
+
+    /**
      * Recupere un client par son ID avec ses documents.
      */
     public CustomerResponse getCustomer(UUID id) {
