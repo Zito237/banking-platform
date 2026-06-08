@@ -1,0 +1,15 @@
+com\banking_platform\operator_service\entity\OperatorStatus.class
+com\banking_platform\operator_service\dto\BusinessRuleRequest.class
+com\banking_platform\operator_service\repository\OperatorRepository.class
+com\banking_platform\operator_service\controller\OperatorController.class
+com\banking_platform\operator_service\dto\OperatorRequest.class
+com\banking_platform\operator_service\dto\OperatorResponse.class
+com\banking_platform\operator_service\dto\BusinessRuleResponse.class
+com\banking_platform\operator_service\entity\BusinessRule.class
+com\banking_platform\operator_service\entity\RuleType.class
+com\banking_platform\operator_service\OperatorServiceApplication.class
+com\banking_platform\operator_service\repository\BusinessRuleRepository.class
+com\banking_platform\operator_service\exception\GlobalExceptionHandler.class
+com\banking_platform\operator_service\dto\CommissionResponse.class
+com\banking_platform\operator_service\service\OperatorService.class
+com\banking_platform\operator_service\entity\Operator.class
