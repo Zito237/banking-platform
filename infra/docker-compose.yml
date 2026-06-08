@@ -1,56 +1,16 @@
-# docker-compose.yml (dans infra/ à la racine du projet)
-version: '3.8'
-
 services:
-  auth-db:
-    image: postgres:16-alpine
-    container_name: authdb
-    environment:
-      POSTGRES_DB: authdb           # Nom de la base créée au démarrage
-      POSTGRES_USER: postgres       # Nom du superuser
-      POSTGRES_PASSWORD: postgres   # ← MOT DE PASSE OBLIGATOIRE (non vide !)
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
     ports:
-      - "5432:5432"
+      - "5672:5672"    # AMQP port (used by the app)
+      - "15672:15672"  # Management UI → http://localhost:15672 (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
     volumes:
-      - auth-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d authdb"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  # operator-db:
-  #   image: postgres:16-alpine
-  #   container_name: operatordb
-  #   environment:
-  #     POSTGRES_DB: operatordb
-  #     POSTGRES_USER: postgres
-  #     POSTGRES_PASSWORD: postgres   # ← MOT DE PASSE OBLIGATOIRE
-  #   ports:
-  #     - "5433:5432"
-  #   volumes:
-  #     - operator-data:/var/lib/postgresql/data
-  #   healthcheck:
-  #     test: ["CMD-SHELL", "pg_isready -U postgres -d operatordb"]
-  #     interval: 5s
-  #     timeout: 5s
-  #     retries: 5
-
-  # ... même pattern pour customer-db, account-db, transaction-db, loan-db
-
-  pgadmin:
-    image: dpage/pgadmin4:latest
-    container_name: pgadmin
-    environment:
-      PGADMIN_DEFAULT_EMAIL: admin@example.com
-      PGADMIN_DEFAULT_PASSWORD: admin
-    ports:
-      - "5050:80"
-    depends_on:
-      - auth-db
-    networks:
-      - default
+      - rabbitmq_data:/var/lib/rabbitmq
+    restart: unless-stopped
 
 volumes:
-  auth-data:
-  # operator-data:
+  rabbitmq_data:
