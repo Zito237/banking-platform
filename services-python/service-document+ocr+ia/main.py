@@ -3,6 +3,9 @@ from fastapi import FastAPI
 from consumer import start_consumer
 from routes import router
 from config import PORT
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 # Creation de l'application FastAPI
 app = FastAPI(
@@ -14,16 +17,12 @@ app = FastAPI(
 # Inclusion des routes
 app.include_router(router, prefix="/api")
 
-
 @app.on_event("startup")
 def startup_event():
-    # Demarre le consommateur RabbitMQ au lancement
     print("[OCR] Demarrage du consommateur RabbitMQ...")
     start_consumer()
     print(f"[OCR] Service pret sur le port {PORT}")
 
-
 @app.on_event("shutdown")
 def shutdown_event():
-    # Nettoyage a l'arret
     print("[OCR] Arret du service...")
