@@ -14,6 +14,8 @@ package com.banking_platform.customer_service.config;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.DefaultJackson2JavaTypeMapper;
+import org.springframework.amqp.support.converter.Jackson2JavaTypeMapper;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +32,9 @@ public class RabbitMQConfig {
 
     // Nom de la queue pour consommer les documents traites
     public static final String QUEUE_DOCUMENT_PROCESSED = "document.processed.queue";
+
+    // Nom de la queue pour consommer les decisions de pret (notifications client)
+    public static final String QUEUE_LOAN_NOTIFICATIONS = "customer.notifications.queue";
 
     /**
      * Declare l'exchange TOPIC.
@@ -60,12 +65,39 @@ public class RabbitMQConfig {
     }
 
     /**
+     * Declare la queue qui recoit les decisions de pret (loan.approved / loan.rejected)
+     * pour generer des notifications client.
+     */
+    @Bean
+    public Queue loanNotificationsQueue() {
+        return new Queue(QUEUE_LOAN_NOTIFICATIONS, true);
+    }
+
+    /**
+     * Lie la queue de notifications a l'exchange avec le pattern "loan.*"
+     * (capture loan.approved et loan.rejected).
+     */
+    @Bean
+    public Binding loanNotificationsBinding(Queue loanNotificationsQueue, TopicExchange bankingExchange) {
+        return BindingBuilder
+                .bind(loanNotificationsQueue)
+                .to(bankingExchange)
+                .with("loan.*");
+    }
+
+    /**
      * Convertisseur JSON pour les messages RabbitMQ.
-     * Permet d'envoyer/recevoir des objets Java directement (serialises en JSON).
+     * Mode INFERRED : le type cible est determine par la signature du listener,
+     * sans dependre de l'en-tete __TypeId__ (les evenements de pret viennent
+     * d'un autre service et ne sont pas sur ce classpath).
      */
     @Bean
     public Jackson2JsonMessageConverter jsonMessageConverter() {
-        return new Jackson2JsonMessageConverter();
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter();
+        DefaultJackson2JavaTypeMapper typeMapper = new DefaultJackson2JavaTypeMapper();
+        typeMapper.setTypePrecedence(Jackson2JavaTypeMapper.TypePrecedence.INFERRED);
+        converter.setJavaTypeMapper(typeMapper);
+        return converter;
     }
 
     /**

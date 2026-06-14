@@ -1,12 +1,14 @@
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\messaging\DocumentProcessedEvent.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\entity\KycStatus.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\repository\DocumentRepository.java
+C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\messaging\NotificationEventListener.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\CustomerServiceApplication.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\service\CustomerService.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\dto\DocumentResponse.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\messaging\DocumentEventListener.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\entity\DocumentType.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\dto\CustomerRequest.java
+C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\dto\NotificationResponse.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\dto\DocumentRequest.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\exception\GlobalExceptionHandler.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\config\RabbitMQConfig.java
@@ -14,5 +16,7 @@ C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\s
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\controller\CustomerController.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\entity\Customer.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\repository\CustomerRepository.java
+C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\repository\NotificationRepository.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\messaging\DocumentSubmittedEvent.java
 C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\dto\CustomerResponse.java
+C:\Users\nandj\banking-platform\backend-java\customer-service\customer-service\src\main\java\com\banking_platform\customer-service\entity\Notification.java

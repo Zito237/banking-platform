@@ -14,5 +14,9 @@ com\banking_platform\customer_service\CustomerServiceApplication.class
 com\banking_platform\customer_service\dto\CustomerRequest.class
 com\banking_platform\customer_service\dto\CustomerResponse.class
 com\banking_platform\customer_service\entity\DocumentType.class
+com\banking_platform\customer_service\dto\NotificationResponse.class
 com\banking_platform\customer_service\messaging\DocumentSubmittedEvent.class
+com\banking_platform\customer_service\repository\NotificationRepository.class
 com\banking_platform\customer_service\messaging\DocumentEventListener.class
+com\banking_platform\customer_service\messaging\NotificationEventListener.class
+com\banking_platform\customer_service\entity\Notification.class

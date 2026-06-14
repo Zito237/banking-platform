@@ -1,9 +1,15 @@
+com\banking_platform\operator_service\config\RabbitMQConfig.class
 com\banking_platform\operator_service\entity\OperatorStatus.class
+com\banking_platform\operator_service\repository\AuditLogRepository.class
 com\banking_platform\operator_service\dto\BusinessRuleRequest.class
+com\banking_platform\operator_service\entity\AuditLog.class
 com\banking_platform\operator_service\repository\OperatorRepository.class
 com\banking_platform\operator_service\controller\OperatorController.class
+com\banking_platform\operator_service\dto\AuditLogResponse.class
+com\banking_platform\operator_service\messaging\AuditEventListener.class
 com\banking_platform\operator_service\dto\OperatorRequest.class
 com\banking_platform\operator_service\dto\OperatorResponse.class
+com\banking_platform\operator_service\controller\AuditController.class
 com\banking_platform\operator_service\dto\BusinessRuleResponse.class
 com\banking_platform\operator_service\entity\BusinessRule.class
 com\banking_platform\operator_service\entity\RuleType.class
