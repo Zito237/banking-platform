@@ -18,11 +18,13 @@ import com.banking_platform.customer_service.dto.DocumentResponse;
 import com.banking_platform.customer_service.dto.DocumentRequest;
 import com.banking_platform.customer_service.dto.CustomerResponse;
 import com.banking_platform.customer_service.dto.CustomerRequest;
+import com.banking_platform.customer_service.dto.NotificationResponse;
 import com.banking_platform.customer_service.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -67,5 +69,24 @@ public class CustomerController {
             @Valid @RequestBody DocumentRequest request) {
         DocumentResponse response = customerService.submitDocument(request);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /customers/notifications?customerId=...
+     * Liste les notifications d'un client (plus recentes en premier).
+     */
+    @GetMapping("/customers/notifications")
+    public ResponseEntity<List<NotificationResponse>> getNotifications(@RequestParam UUID customerId) {
+        return ResponseEntity.ok(customerService.getNotifications(customerId));
+    }
+
+    /**
+     * PUT /customers/notifications/{id}/read
+     * Marque une notification comme lue.
+     */
+    @PutMapping("/customers/notifications/{id}/read")
+    public ResponseEntity<Void> markNotificationRead(@PathVariable UUID id) {
+        customerService.markNotificationRead(id);
+        return ResponseEntity.ok().build();
     }
 }

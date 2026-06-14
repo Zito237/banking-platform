@@ -9,7 +9,7 @@ export default function AuditPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([])
 
   useEffect(() => {
-    api.get('/audit').then((r) => setEntries(r.data)).catch(() => setEntries([]))
+    api.get('/operators/audit').then((r) => setEntries(r.data)).catch(() => setEntries([]))
   }, [])
 
   return (
