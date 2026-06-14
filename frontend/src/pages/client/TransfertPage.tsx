@@ -8,9 +8,17 @@ export default function TransfertPage() {
       endpoint="/transfers"
       fields={[
         { name: 'sourceAccountId', label: 'Compte source (ID)' },
-        { name: 'targetAccountId', label: 'Compte destinataire (ID)' },
+        { name: 'destinationAccountId', label: 'Compte destinataire (ID)' },
         { name: 'amount', label: 'Montant (FCFA)', type: 'number' },
-        { name: 'description', label: 'Description (optionnel)' },
+        {
+          name: 'sameOperator',
+          label: 'Même opérateur que le destinataire ?',
+          options: [
+            { value: 'true', label: 'Oui' },
+            { value: 'false', label: 'Non' },
+          ],
+          defaultValue: 'true',
+        },
       ]}
     />
   )

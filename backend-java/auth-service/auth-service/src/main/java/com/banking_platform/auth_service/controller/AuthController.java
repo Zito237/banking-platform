@@ -74,4 +74,21 @@ public class AuthController {
         UserInfoResponse userInfo = authService.getUserInfo(username);
         return ResponseEntity.ok(userInfo);
     }
+
+    /**
+     * PUT /auth/me/link-customer
+     * Associe le profil client (cree dans customer-service) au compte connecte.
+     * Permet d'acceder aux espaces "Mes comptes", "Prets" et "Documents".
+     */
+    @PutMapping("/me/link-customer")
+    public ResponseEntity<UserInfoResponse> linkCustomer(
+            @RequestHeader("Authorization") String authHeader,
+            @Valid @RequestBody LinkCustomerRequest request) {
+
+        String token = authHeader.substring(7);
+        String username = jwtUtil.extractUsername(token);
+
+        UserInfoResponse userInfo = authService.linkCustomer(username, request.getCustomerId());
+        return ResponseEntity.ok(userInfo);
+    }
 }

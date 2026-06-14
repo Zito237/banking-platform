@@ -113,6 +113,20 @@ public class AuthService {
     }
 
     /**
+     * Associe le profil client (customer-service) au compte de l'utilisateur connecte.
+     */
+    @Transactional
+    public UserInfoResponse linkCustomer(String username, java.util.UUID customerId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouve"));
+
+        user.setLinkedCustomerId(customerId);
+        userRepository.save(user);
+
+        return getUserInfo(username);
+    }
+
+    /**
      * Recupere les informations d'un utilisateur a partir de son username.
      */
     public UserInfoResponse getUserInfo(String username) {

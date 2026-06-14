@@ -1,6 +1,7 @@
 package com.banking_platform.loan_service.repository;
 
 import com.banking_platform.loan_service.entity.LoanApplication;
+import com.banking_platform.loan_service.entity.LoanApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -14,4 +15,9 @@ public interface LoanApplicationRepository extends JpaRepository<LoanApplication
      * Liste les demandes d'un client.
      */
     List<LoanApplication> findByCustomerId(UUID customerId);
+
+    /**
+     * Liste les demandes par statut (ex: pour les opérateurs).
+     */
+    List<LoanApplication> findByStatus(LoanApplicationStatus status);
 }

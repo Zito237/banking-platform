@@ -1,5 +1,6 @@
 # Point d'entree du reporting-service
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
 from consumer import start_consumer
 from routes import router
@@ -10,6 +11,14 @@ app = FastAPI(
     title="Reporting Service",
     description="Service de rapports et statistiques de la plateforme bancaire",
     version="1.0.0"
+)
+
+# Autorise le frontend (Vite dev server) a appeler ce service directement
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:5173"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # Inclusion des routes
