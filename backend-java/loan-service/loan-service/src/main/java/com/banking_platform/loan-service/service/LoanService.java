@@ -102,6 +102,30 @@ public class LoanService {
     }
 
     /**
+     * Liste les demandes de prêt, filtrées par client et/ou par statut.
+     */
+    public List<LoanApplicationResponse> listApplications(UUID customerId, LoanApplicationStatus status) {
+        List<LoanApplication> applications;
+        if (customerId != null) {
+            applications = loanApplicationRepository.findByCustomerId(customerId);
+        } else if (status != null) {
+            applications = loanApplicationRepository.findByStatus(status);
+        } else {
+            applications = loanApplicationRepository.findAll();
+        }
+
+        if (customerId != null && status != null) {
+            applications = applications.stream()
+                    .filter(a -> a.getStatus() == status)
+                    .collect(Collectors.toList());
+        }
+
+        return applications.stream()
+                .map(this::mapToApplicationResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
      * Prend une décision sur une demande de prêt.
      * Si APPROVED : crée le prêt + génère l'échéancier + publie LoanApproved.
      * Si REJECTED : publie LoanRejected.

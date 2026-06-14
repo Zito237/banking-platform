@@ -3,7 +3,7 @@ import { useState, FormEvent } from 'react'
 import api from '../api/axios'
 import Card from '../components/Card'
 
-interface Field { name: string; label: string; type?: string }
+interface Field { name: string; label: string; type?: string; options?: { value: string; label: string }[]; defaultValue?: string }
 
 interface Props {
   title: string
@@ -22,7 +22,13 @@ export default function TransactionForm({ title, endpoint, fields }: Props) {
     setMsg(''); setError('')
     setLoading(true)
     try {
-      await api.post(endpoint, form)
+      const payload = { ...form }
+      fields.forEach((f) => {
+        if (f.defaultValue !== undefined && payload[f.name] === undefined) {
+          payload[f.name] = f.defaultValue
+        }
+      })
+      await api.post(endpoint, payload)
       setMsg('Opération effectuée avec succès.')
       setForm({})
     } catch (err: any) {
@@ -38,13 +44,26 @@ export default function TransactionForm({ title, endpoint, fields }: Props) {
         {fields.map((f) => (
           <div key={f.name}>
             <label className="block text-sm font-medium text-slate-700 mb-1">{f.label}</label>
-            <input
-              type={f.type ?? 'text'}
-              required
-              value={form[f.name] ?? ''}
-              onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+            {f.options ? (
+              <select
+                required
+                value={form[f.name] ?? f.defaultValue ?? ''}
+                onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {f.options.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type={f.type ?? 'text'}
+                required={!f.label.includes('optionnel')}
+                value={form[f.name] ?? ''}
+                onChange={(e) => setForm({ ...form, [f.name]: e.target.value })}
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            )}
           </div>
         ))}
         {msg && <p className="text-green-600 text-sm">{msg}</p>}

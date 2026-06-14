@@ -9,7 +9,7 @@ export default function NotificationsPage() {
   const [notifs, setNotifs] = useState<Notif[]>([])
 
   useEffect(() => {
-    api.get('/customers/notifications').then((r) => setNotifs(r.data))
+    api.get('/customers/notifications').then((r) => setNotifs(r.data)).catch(() => setNotifs([]))
   }, [])
 
   return (

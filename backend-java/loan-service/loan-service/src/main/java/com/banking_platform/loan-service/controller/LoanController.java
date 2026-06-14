@@ -26,7 +26,9 @@ import com.banking_platform.loan_service.dto.LoanResponse;
 import com.banking_platform.loan_service.dto.RepaymentScheduleResponse;
 import com.banking_platform.loan_service.dto.LoanDecisionRequest;
 import com.banking_platform.loan_service.dto.RepaymentRequest;
+import com.banking_platform.loan_service.entity.LoanApplicationStatus;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -48,6 +50,18 @@ public class LoanController {
             @Valid @RequestBody LoanRequest request) {
         LoanApplicationResponse response = loanService.createLoanApplication(request);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /loans?customerId=...&status=...
+     * Liste les demandes de prêt, filtrées par client (espace client)
+     * et/ou par statut (ex: SUBMITTED pour les opérateurs).
+     */
+    @GetMapping
+    public ResponseEntity<List<LoanApplicationResponse>> listApplications(
+            @RequestParam(required = false) UUID customerId,
+            @RequestParam(required = false) LoanApplicationStatus status) {
+        return ResponseEntity.ok(loanService.listApplications(customerId, status));
     }
 
     /**
