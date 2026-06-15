@@ -1,9 +1,9 @@
 # TODO
 
-- [ ] Confirm root cause of Maven errors for customer-service POM dependencies missing versions.
-- [ ] Implement robust fix by adding explicit versions for missing dependency coordinates in customer-service/pom.xml.
-- [ ] Re-run `./mvnw spring-boot:run` for customer-service to verify build passes.
-- [x] Added explicit Spring Boot dependency versions in customer-service/pom.xml to resolve missing version errors.
+- [x] Inspect `services-node/notification-service/package.json` and identify JSON parse error location.
+- [x] Draft edit plan to fix invalid JSON (likely broken quoting in `scripts.format`).
+- [x] Apply fix to `package.json`.
+- [ ] Run `npm install` in `services-node/notification-service` and confirm it completes.
+- [ ] If install still fails, inspect resulting npm error log and iterate.
 
-- [ ] If build still fails, inspect effective POM and parent resolution.
 
