@@ -1,4 +1,9 @@
+version: '3.8'
+
 services:
+  # ============================================
+  # RabbitMQ : bus de messages central
+  # ============================================
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     ports:
@@ -13,3 +18,102 @@ services:
       timeout: 5s
       retries: 5
     restart: unless-stopped
+
+  # ============================================
+  # MongoDB : base de donnees pour l'audit
+  # ============================================
+  mongodb:
+    image: mongo:7.0
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=audit
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ============================================
+  # Audit Service
+  # ============================================
+  # audit-service:
+  #   build: .
+  #   ports:
+  #     - "9003:9003"
+  #   environment:
+  #     - PORT=9003
+  #     - MONGO_URI=mongodb://mongodb:27017/audit
+  #     - RABBITMQ_URL=amqp://rabbitmq:5672
+  #     - RABBITMQ_EXCHANGE=banking.events
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     mongodb:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+  # ============================================
+  # Notification Service (si vous l'avez)
+  # ============================================
+  # notification-service:
+  #   build: ../notification-service
+  #   ports:
+  #     - "9002:9002"
+  #   environment:
+  #     - PORT=9002
+  #     - RABBITMQ_URL=amqp://rabbitmq:5672
+  #     - RABBITMQ_EXCHANGE=banking.events
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+  # ============================================
+  # Reporting Service (si vous l'avez)
+  # ============================================
+  # reporting-service:
+  #   build: ../reporting-service
+  #   ports:
+  #     - "9004:9004"
+  #   environment:
+  #     - PORT=9004
+  #     - RABBITMQ_HOST=rabbitmq
+  #     - RABBITMQ_PORT=5672
+  #     - RABBITMQ_USER=guest
+  #     - RABBITMQ_PASS=guest
+  #     - RABBITMQ_EXCHANGE=banking.events
+  #     - DATABASE_PATH=/data/reporting.db
+  #   volumes:
+  #     - reporting_data:/data
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+  # ============================================
+  # Document OCR Service (si vous l'avez)
+  # ============================================
+  # document-ocr-service:
+  #   build: ../document-ocr-service
+  #   ports:
+  #     - "9001:9001"
+  #   environment:
+  #     - PORT=9001
+  #     - RABBITMQ_HOST=rabbitmq
+  #     - RABBITMQ_PORT=5672
+  #     - RABBITMQ_USER=guest
+  #     - RABBITMQ_PASS=guest
+  #     - RABBITMQ_EXCHANGE=banking.events
+  #     - TESSERACT_CMD=/usr/bin/tesseract
+  #   depends_on:
+  #     rabbitmq:
+  #       condition: service_healthy
+  #   restart: unless-stopped
+
+volumes:
+  mongodb_data:
+  # reporting_data:
