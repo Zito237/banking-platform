@@ -69,6 +69,12 @@
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
 
+        <!-- AMQP : consomme les evenements RabbitMQ pour le journal d'audit -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-amqp</artifactId>
+        </dependency>
+
         <!-- Config Client : recupere sa config depuis le Config Server -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext'
 interface NavItem { label: string; to: string }
 
 const clientLinks: NavItem[] = [
+  { label: 'Mon profil', to: '/profil' },
   { label: 'Comptes', to: '/comptes' },
   { label: 'Dépôt', to: '/depot' },
   { label: 'Retrait', to: '/retrait' },

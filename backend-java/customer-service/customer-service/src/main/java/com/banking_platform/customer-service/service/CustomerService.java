@@ -22,12 +22,15 @@ import com.banking_platform.customer_service.entity.Customer;
 import com.banking_platform.customer_service.entity.DocumentReference;
 import com.banking_platform.customer_service.entity.DocumentType;
 import com.banking_platform.customer_service.entity.KycStatus;
+import com.banking_platform.customer_service.entity.Notification;
 import com.banking_platform.customer_service.messaging.DocumentSubmittedEvent;
 import com.banking_platform.customer_service.dto.DocumentResponse;
 import com.banking_platform.customer_service.dto.DocumentRequest;
+import com.banking_platform.customer_service.dto.NotificationResponse;
 import com.banking_platform.customer_service.config.RabbitMQConfig;
 import com.banking_platform.customer_service.repository.CustomerRepository;
 import com.banking_platform.customer_service.repository.DocumentRepository;
+import com.banking_platform.customer_service.repository.NotificationRepository;
 import com.banking_platform.customer_service.dto.CustomerRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,13 +49,16 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
     private final DocumentRepository documentRepository;
+    private final NotificationRepository notificationRepository;
     private final RabbitTemplate rabbitTemplate;
 
     public CustomerService(CustomerRepository customerRepository,
                            DocumentRepository documentRepository,
+                           NotificationRepository notificationRepository,
                            RabbitTemplate rabbitTemplate) {
         this.customerRepository = customerRepository;
         this.documentRepository = documentRepository;
+        this.notificationRepository = notificationRepository;
         this.rabbitTemplate = rabbitTemplate;
     }
 
@@ -137,6 +143,26 @@ public class CustomerService {
                 document.getId());
 
         return mapToDocumentResponse(document);
+    }
+
+    /**
+     * Liste les notifications d'un client (plus recentes en premier).
+     */
+    public List<NotificationResponse> getNotifications(UUID customerId) {
+        return notificationRepository.findByCustomerIdOrderByCreatedAtDesc(customerId).stream()
+                .map(n -> new NotificationResponse(n.getId(), n.getMessage(), n.isRead(), n.getCreatedAt()))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Marque une notification comme lue.
+     */
+    @Transactional
+    public void markNotificationRead(UUID notificationId) {
+        Notification notification = notificationRepository.findById(notificationId)
+                .orElseThrow(() -> new RuntimeException("Notification non trouvee"));
+        notification.setRead(true);
+        notificationRepository.save(notification);
     }
 
     /**

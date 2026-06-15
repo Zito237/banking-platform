@@ -15,6 +15,7 @@ import com.banking_platform.auth_service.dto.*;
 import com.banking_platform.auth_service.entity.Role;
 import com.banking_platform.auth_service.entity.RoleName;
 import com.banking_platform.auth_service.entity.User;
+import com.banking_platform.auth_service.messaging.AuthEventPublisher;
 import com.banking_platform.auth_service.repository.RoleRepository;
 import com.banking_platform.auth_service.repository.UserRepository;
 import com.banking_platform.auth_service.security.JwtUtil;
@@ -32,16 +33,19 @@ public class AuthService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final AuthEventPublisher authEventPublisher;
 
     // Injection par constructeur (bonne pratique Spring)
     public AuthService(UserRepository userRepository,
                        RoleRepository roleRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtUtil jwtUtil) {
+                       JwtUtil jwtUtil,
+                       AuthEventPublisher authEventPublisher) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
+        this.authEventPublisher = authEventPublisher;
     }
 
     /**
@@ -84,6 +88,8 @@ public class AuthService {
                 .collect(Collectors.toSet());
         String token = jwtUtil.generateToken(user.getUsername(), roleNames);
 
+        authEventPublisher.publishRegister(user.getUsername());
+
         return new AuthResponse(token, user.getUsername(), "Inscription reussie");
     }
 
@@ -109,7 +115,23 @@ public class AuthService {
                 .collect(Collectors.toSet());
         String token = jwtUtil.generateToken(user.getUsername(), roleNames);
 
+        authEventPublisher.publishLogin(user.getUsername());
+
         return new AuthResponse(token, user.getUsername(), "Connexion reussie");
+    }
+
+    /**
+     * Associe le profil client (customer-service) au compte de l'utilisateur connecte.
+     */
+    @Transactional
+    public UserInfoResponse linkCustomer(String username, java.util.UUID customerId) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouve"));
+
+        user.setLinkedCustomerId(customerId);
+        userRepository.save(user);
+
+        return getUserInfo(username);
     }
 
     /**
