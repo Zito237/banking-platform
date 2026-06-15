@@ -32,7 +32,7 @@ public class BusinessRule {
     @Column(nullable = false)
     private RuleType ruleType;  // COMMISSION, CEILING, VALIDATION
 
-    @Column(nullable = false)
+    @Column(name = "rule_value", nullable = false)
     private String value;  // Valeur de la regle (ex: "1.5%", "500000", "true")
 
     // Constructeur vide requis par JPA

@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Layout from './components/Layout'
 import LoginPage from './pages/LoginPage'
 
+import ProfilPage from './pages/client/ProfilPage'
 import ComptesPage from './pages/client/ComptesPage'
 import DepotPage from './pages/client/DepotPage'
 import RetraitPage from './pages/client/RetraitPage'
@@ -40,6 +41,7 @@ export default function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
             <Route index element={<HomeRedirect />} />
+            <Route path="profil" element={<ProfilPage />} />
             <Route path="comptes" element={<ComptesPage />} />
             <Route path="depot" element={<DepotPage />} />
             <Route path="retrait" element={<RetraitPage />} />

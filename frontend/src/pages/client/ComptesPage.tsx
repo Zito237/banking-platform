@@ -8,14 +8,27 @@ interface Account { id: string; accountNumber: string; balance: number; type: st
 export default function ComptesPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    api.get('/accounts').then((r) => setAccounts(r.data)).finally(() => setLoading(false))
+    api.get('/auth/me')
+      .then(({ data }) => {
+        if (!data.linkedCustomerId) {
+          setError('Aucun profil client n\'est encore associé à votre compte.')
+          return
+        }
+        return api.get('/accounts', { params: { customerId: data.linkedCustomerId } })
+          .then((r) => setAccounts(r.data))
+      })
+      .catch(() => setError('Impossible de charger vos comptes.'))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
     <Card title="Mes comptes">
-      {loading ? <p className="text-slate-400 text-sm">Chargement...</p> : (
+      {loading ? <p className="text-slate-400 text-sm">Chargement...</p> : error ? (
+        <p className="text-slate-400 text-sm">{error}</p>
+      ) : (
         <table className="w-full text-sm">
           <thead>
             <tr className="text-left text-slate-400 border-b">

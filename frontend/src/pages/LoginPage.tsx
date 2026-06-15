@@ -29,7 +29,14 @@ export default function LoginPage() {
         navigate('/')
       }
     } catch (err: any) {
-      setError(err.response?.data?.message ?? 'Une erreur est survenue.')
+      const message = err.response?.data?.message
+      if (typeof message === 'string') {
+        setError(message)
+      } else if (message && typeof message === 'object') {
+        setError(Object.values(message).join(' '))
+      } else {
+        setError('Une erreur est survenue.')
+      }
     } finally {
       setLoading(false)
     }

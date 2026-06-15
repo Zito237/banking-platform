@@ -16,7 +16,8 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>(null!)
 
 // Décode le payload d'un JWT (base64)
-function parseJwt(token: string): { role?: string; sub?: string; roles?: string[] } {
+// Le claim "roles" est une chaîne unique (ex: "CLIENT" ou "CLIENT,ADMIN")
+function parseJwt(token: string): { role?: string; sub?: string; roles?: string } {
   try {
     return JSON.parse(atob(token.split('.')[1]))
   } catch {
@@ -24,20 +25,22 @@ function parseJwt(token: string): { role?: string; sub?: string; roles?: string[
   }
 }
 
+function extractRole(payload: { role?: string; roles?: string }): string {
+  return payload.role ?? payload.roles?.split(',')[0] ?? ''
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const stored = localStorage.getItem('token')
   const [user, setUser] = useState<AuthUser | null>(() => {
     if (!stored) return null
     const payload = parseJwt(stored)
-    const role = payload.role ?? payload.roles?.[0] ?? ''
-    return { token: stored, role, username: payload.sub ?? '' }
+    return { token: stored, role: extractRole(payload), username: payload.sub ?? '' }
   })
 
   function login(token: string) {
     localStorage.setItem('token', token)
     const payload = parseJwt(token)
-    const role = payload.role ?? payload.roles?.[0] ?? ''
-    setUser({ token, role, username: payload.sub ?? '' })
+    setUser({ token, role: extractRole(payload), username: payload.sub ?? '' })
   }
 
   function logout() {
