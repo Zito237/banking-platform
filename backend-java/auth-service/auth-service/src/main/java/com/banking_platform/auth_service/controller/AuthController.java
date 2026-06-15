@@ -76,6 +76,26 @@ public class AuthController {
     }
 
     /**
+     * POST /auth/operators
+     * Cree un compte OPERATOR rattache a un operateur (operator-service).
+     * Reserve aux administrateurs : la Gateway transmet le role de
+     * l'utilisateur connecte dans l'en-tete X-User-Roles.
+     */
+    @PostMapping("/operators")
+    public ResponseEntity<?> createOperatorAccount(
+            @RequestHeader(value = "X-User-Roles", required = false) String roles,
+            @Valid @RequestBody CreateOperatorAccountRequest request) {
+
+        if (roles == null || !roles.contains("ADMIN")) {
+            return ResponseEntity.status(403)
+                    .body(java.util.Map.of("message", "Reserve aux administrateurs"));
+        }
+
+        UserInfoResponse response = authService.createOperatorAccount(request);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * PUT /auth/me/link-customer
      * Associe le profil client (cree dans customer-service) au compte connecte.
      * Permet d'acceder aux espaces "Mes comptes", "Prets" et "Documents".
