@@ -104,6 +104,13 @@ public class CustomerService {
     }
 
     /**
+     * Indique si un client existe pour cet ID (utilise par les autres services via Feign).
+     */
+    public boolean existsById(UUID id) {
+        return customerRepository.existsById(id);
+    }
+
+    /**
      * Soumet un document pour un client et publie un evenement RabbitMQ.
      * L'evenement sera consomme par le service OCR pour traitement.
      */
@@ -119,7 +126,10 @@ public class CustomerService {
         customer.addDocument(document);
 
         // Sauvegarde (cascade sauvegarde aussi le document)
-        customerRepository.save(customer);
+        // save() effectue un merge() car customer est deja persiste : il faut donc
+        // recuperer le document depuis l'entite fusionnee pour obtenir son id genere.
+        Customer saved = customerRepository.save(customer);
+        document = saved.getDocuments().get(saved.getDocuments().size() - 1);
 
         logger.info("Document soumis : id={}, type={}, client={}",
                 document.getId(), docType, customer.getId());
@@ -133,14 +143,17 @@ public class CustomerService {
                 request.getFileUrl()
         );
 
-        rabbitTemplate.convertAndSend(
-                RabbitMQConfig.EXCHANGE_NAME,
-                RabbitMQConfig.ROUTING_KEY_DOCUMENT_SUBMITTED,
-                event
-        );
-
-        logger.info("Evenement DocumentSubmitted publie sur RabbitMQ : documentId={}",
-                document.getId());
+        try {
+            rabbitTemplate.convertAndSend(
+                    RabbitMQConfig.EXCHANGE_NAME,
+                    RabbitMQConfig.ROUTING_KEY_DOCUMENT_SUBMITTED,
+                    event
+            );
+            logger.info("Evenement DocumentSubmitted publie sur RabbitMQ : documentId={}",
+                    document.getId());
+        } catch (Exception e) {
+            logger.warn("Impossible de publier l'evenement DocumentSubmitted : {}", e.getMessage());
+        }
 
         return mapToDocumentResponse(document);
     }

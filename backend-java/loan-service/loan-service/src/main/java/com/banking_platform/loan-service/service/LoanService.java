@@ -171,11 +171,15 @@ public class LoanService {
                     savedLoan.getInterestRate(),
                     savedLoan.getTermMonths()
             );
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.EXCHANGE_NAME,
-                    RabbitMQConfig.ROUTING_KEY_LOAN_APPROVED,
-                    event
-            );
+            try {
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.EXCHANGE_NAME,
+                        RabbitMQConfig.ROUTING_KEY_LOAN_APPROVED,
+                        event
+                );
+            } catch (Exception e) {
+                logger.warn("Impossible de publier l'evenement LoanApproved : {}", e.getMessage());
+            }
 
             return mapToLoanResponse(savedLoan);
 
@@ -193,11 +197,15 @@ public class LoanService {
                     application.getCustomerId(),
                     request.getReason()
             );
-            rabbitTemplate.convertAndSend(
-                    RabbitMQConfig.EXCHANGE_NAME,
-                    RabbitMQConfig.ROUTING_KEY_LOAN_REJECTED,
-                    event
-            );
+            try {
+                rabbitTemplate.convertAndSend(
+                        RabbitMQConfig.EXCHANGE_NAME,
+                        RabbitMQConfig.ROUTING_KEY_LOAN_REJECTED,
+                        event
+                );
+            } catch (Exception e) {
+                logger.warn("Impossible de publier l'evenement LoanRejected : {}", e.getMessage());
+            }
 
             return null;  // Ou un DTO spécifique pour le rejet
         }
