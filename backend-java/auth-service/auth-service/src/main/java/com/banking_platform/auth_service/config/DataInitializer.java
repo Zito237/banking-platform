@@ -40,21 +40,6 @@ public class DataInitializer {
                 userRepository.save(admin);
                 System.out.println("Utilisateur admin cree (admin / admin123)");
             }
-
-            // Compte operateur par defaut, pour acceder a l'espace operateur (demandes de pret, rapports)
-            if (userRepository.findByUsername("operator").isEmpty()) {
-                Role operatorRole = roleRepository.findByName(RoleName.OPERATOR)
-                        .orElseThrow(() -> new RuntimeException("Role OPERATOR non trouve"));
-
-                User operator = new User();
-                operator.setUsername("operator");
-                operator.setEmail("operator@banking-platform.local");
-                operator.setPasswordHash(passwordEncoder.encode("operator123"));
-                operator.setEnabled(true);
-                operator.addRole(operatorRole);
-                userRepository.save(operator);
-                System.out.println("Utilisateur operator cree (operator / operator123)");
-            }
         };
     }
 }
