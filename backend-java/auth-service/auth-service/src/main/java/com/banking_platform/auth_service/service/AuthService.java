@@ -121,6 +121,35 @@ public class AuthService {
     }
 
     /**
+     * Cree un compte OPERATOR, rattache a un operateur (operator-service).
+     * Reserve aux administrateurs (verifie dans le controller via X-User-Roles).
+     */
+    @Transactional
+    public UserInfoResponse createOperatorAccount(CreateOperatorAccountRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new RuntimeException("Ce nom d'utilisateur est deja pris");
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Cet email est deja utilise");
+        }
+
+        User user = new User();
+        user.setUsername(request.getUsername());
+        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
+        user.setEmail(request.getEmail());
+        user.setEnabled(true);
+        user.setOperatorId(request.getOperatorId());
+
+        Role operatorRole = roleRepository.findByName(RoleName.OPERATOR)
+                .orElseThrow(() -> new RuntimeException("Role OPERATOR non trouve"));
+        user.addRole(operatorRole);
+
+        userRepository.save(user);
+
+        return getUserInfo(user.getUsername());
+    }
+
+    /**
      * Associe le profil client (customer-service) au compte de l'utilisateur connecte.
      */
     @Transactional

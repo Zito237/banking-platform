@@ -8,6 +8,8 @@ import com.banking_platform.transaction_service.entity.*;
 import com.banking_platform.transaction_service.messaging.TransactionCompletedEvent;
 import com.banking_platform.transaction_service.messaging.TransactionFailedEvent;
 import com.banking_platform.transaction_service.repository.TransactionRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
@@ -17,6 +19,8 @@ import java.util.UUID;
 
 @Service
 public class TransactionService {
+
+    private static final Logger log = LoggerFactory.getLogger(TransactionService.class);
 
     private final TransactionRepository repo;
     private final AccountClient accountClient;
@@ -126,14 +130,22 @@ public class TransactionService {
     }
 
     private void publishCompleted(Transaction tx) {
-        rabbit.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.RK_COMPLETED,
-            new TransactionCompletedEvent(tx.getId(), tx.getReference(), tx.getType().name(),
-                tx.getAmount(), tx.getSourceAccountId(), tx.getDestinationAccountId()));
+        try {
+            rabbit.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.RK_COMPLETED,
+                new TransactionCompletedEvent(tx.getId(), tx.getReference(), tx.getType().name(),
+                    tx.getAmount(), tx.getSourceAccountId(), tx.getDestinationAccountId()));
+        } catch (Exception e) {
+            log.warn("Impossible de publier l'evenement transaction.completed : {}", e.getMessage());
+        }
     }
 
     private void publishFailed(Transaction tx, String reason) {
-        rabbit.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.RK_FAILED,
-            new TransactionFailedEvent(tx.getId(), tx.getReference(), reason));
+        try {
+            rabbit.convertAndSend(RabbitMQConfig.EXCHANGE, RabbitMQConfig.RK_FAILED,
+                new TransactionFailedEvent(tx.getId(), tx.getReference(), reason));
+        } catch (Exception e) {
+            log.warn("Impossible de publier l'evenement transaction.failed : {}", e.getMessage());
+        }
     }
 
     private TransactionResponse toResponse(Transaction t) {

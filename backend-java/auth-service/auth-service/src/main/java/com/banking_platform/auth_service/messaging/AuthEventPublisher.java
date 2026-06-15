@@ -10,6 +10,8 @@ package com.banking_platform.auth_service.messaging;
  */
 
 import com.banking_platform.auth_service.config.RabbitMQConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
@@ -18,6 +20,8 @@ import java.util.Map;
 
 @Component
 public class AuthEventPublisher {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthEventPublisher.class);
 
     private final RabbitTemplate rabbitTemplate;
 
@@ -38,6 +42,10 @@ public class AuthEventPublisher {
                 "username", username,
                 "timestamp", LocalDateTime.now().toString()
         );
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, event);
+        try {
+            rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, routingKey, event);
+        } catch (Exception e) {
+            log.warn("Impossible de publier l'evenement {} : {}", routingKey, e.getMessage());
+        }
     }
 }

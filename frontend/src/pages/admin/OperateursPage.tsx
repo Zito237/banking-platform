@@ -17,6 +17,14 @@ export default function OperateursPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
+  // Formulaire de creation d'un compte operateur
+  const [accUsername, setAccUsername] = useState('')
+  const [accPassword, setAccPassword] = useState('')
+  const [accEmail, setAccEmail] = useState('')
+  const [accOperatorId, setAccOperatorId] = useState('')
+  const [accMsg, setAccMsg] = useState('')
+  const [accError, setAccError] = useState('')
+
   const fetchOperators = () =>
     api.get('/operators')
       .then((r) => setOperators(r.data))
@@ -41,6 +49,25 @@ export default function OperateursPage() {
     } catch (err: any) {
       const message = err.response?.data?.message
       setError(typeof message === 'string' ? message : "Impossible de créer l'opérateur.")
+    }
+  }
+
+  async function handleCreateOperatorAccount(e: FormEvent) {
+    e.preventDefault()
+    setAccError('')
+    setAccMsg('')
+    try {
+      await api.post('/auth/operators', {
+        username: accUsername,
+        password: accPassword,
+        email: accEmail,
+        operatorId: accOperatorId,
+      })
+      setAccMsg('Compte opérateur créé. Cette personne peut maintenant se connecter avec ces identifiants.')
+      setAccUsername(''); setAccPassword(''); setAccEmail(''); setAccOperatorId('')
+    } catch (err: any) {
+      const message = err.response?.data?.message
+      setAccError(typeof message === 'string' ? message : "Impossible de créer le compte opérateur.")
     }
   }
 
@@ -137,6 +164,63 @@ export default function OperateursPage() {
             </tbody>
           </table>
         )}
+      </Card>
+
+      <Card title="Créer un compte opérateur" className="max-w-md">
+        <p className="text-sm text-slate-500 mb-4">
+          Crée un compte de connexion pour un employé d'un opérateur. Cette personne pourra ensuite
+          se connecter elle-même avec son propre nom d'utilisateur et mot de passe pour accéder à
+          l'espace "Demandes de prêt" et "Rapports".
+        </p>
+        <form onSubmit={handleCreateOperatorAccount} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Opérateur</label>
+            <select
+              required
+              value={accOperatorId}
+              onChange={(e) => setAccOperatorId(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Sélectionner...</option>
+              {operators.map((o) => <option key={o.id} value={o.id}>{o.name} ({o.code})</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Nom d'utilisateur</label>
+            <input
+              required
+              value={accUsername}
+              onChange={(e) => setAccUsername(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
+            <input
+              required
+              type="email"
+              value={accEmail}
+              onChange={(e) => setAccEmail(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Mot de passe (min. 6 caractères)</label>
+            <input
+              required
+              type="password"
+              minLength={6}
+              value={accPassword}
+              onChange={(e) => setAccPassword(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          {accMsg && <p className="text-green-600 text-sm">{accMsg}</p>}
+          {accError && <p className="text-red-500 text-sm">{accError}</p>}
+          <button type="submit" className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
+            Créer le compte
+          </button>
+        </form>
       </Card>
     </div>
   )
