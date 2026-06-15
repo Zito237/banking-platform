@@ -107,19 +107,19 @@ npm run start:prod
 
 ```bash
 # Health check
-curl http://localhost:9003/health
+curl http://localhost:9009/health
 
 # Tous les logs (page 1, 20 par page)
-curl http://localhost:9003/audit
+curl http://localhost:9009/audit
 
 # Filtrer par ressource
-curl "http://localhost:9003/audit?resource=transaction"
+curl "http://localhost:9009/audit?resource=transaction"
 
 # Filtrer par periode
-curl "http://localhost:9003/audit?from=2024-06-01&to=2024-06-15"
+curl "http://localhost:9009/audit?from=2024-06-01&to=2024-06-15"
 
 # Filtrer par acteur + pagination
-curl "http://localhost:9003/audit?actor=client:123&page=1&limit=10"
+curl "http://localhost:9009/audit?actor=client:123&page=1&limit=10"
 ```
 
 ## Reponse paginee
