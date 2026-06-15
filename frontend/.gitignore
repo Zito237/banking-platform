@@ -1,0 +1,35 @@
+# Frontend (.gitignore) - Vite/React/Node
+
+# Dependencies
+node_modules/
+
+# Vite / build outputs
+dist/
+dist-*/
+.vite/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Env files
+.env
+.env.*
+
+# Cache / coverage
+coverage/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE (optional)
+.idea/
+.vscode/
+*.code-workspace
+*.iml
+
