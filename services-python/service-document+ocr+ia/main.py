@@ -5,7 +5,7 @@ from routes import router
 from config import PORT
 import pytesseract
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = r'C:\Users\PC\AppData\Local\Programs\Tesseract-OCR\tesseract.exe'
 
 # Creation de l'application FastAPI
 app = FastAPI(
