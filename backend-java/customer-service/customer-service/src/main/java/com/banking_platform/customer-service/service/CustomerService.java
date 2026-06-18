@@ -161,6 +161,7 @@ public class CustomerService {
     /**
      * Liste tous les documents (pour l'admin).
      */
+    @Transactional(readOnly = true)
     public List<DocumentResponse> getAllDocuments() {
         return documentRepository.findAll().stream()
                 .map(doc -> {
