@@ -129,9 +129,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>com.banking_platform.customer_service.CustomerServiceApplication</mainClass>
-                </configuration>
             </plugin>
         </plugins>
     </build>

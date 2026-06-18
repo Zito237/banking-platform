@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 import api from '../../api/axios'
 import Card from '../../components/Card'
-import { parseError } from '../../api/parseError'
 
 interface LoanApplication {
   id: string
@@ -47,7 +46,7 @@ export default function DemandesPretPage() {
       fetchLoans()
     } catch (err: any) {
       const message = err.response?.data?.message
-      setDecisionError({ ...decisionError, [id]: parseError(err, "Impossible d'enregistrer la décision.") })
+      setDecisionError({ ...decisionError, [id]: typeof message === 'string' ? message : 'Impossible d\'enregistrer la décision.' })
     }
   }
 

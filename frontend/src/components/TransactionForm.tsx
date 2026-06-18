@@ -1,8 +1,7 @@
 // Formulaire générique de transaction
-import { useState, useEffect, FormEvent } from 'react'
+import { useState, FormEvent } from 'react'
 import api from '../api/axios'
 import Card from '../components/Card'
-import { parseError } from '../api/parseError'
 
 interface Field { name: string; label: string; type?: string; options?: { value: string; label: string }[]; defaultValue?: string }
 
@@ -17,22 +16,6 @@ export default function TransactionForm({ title, endpoint, fields }: Props) {
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-
-  // When options load for a select field, pre-select the first real option
-  useEffect(() => {
-    const updates: Record<string, string> = {}
-    fields.forEach((f) => {
-      if (f.options && f.options.length > 0) {
-        const firstReal = f.options.find((o) => o.value !== '')
-        if (firstReal && !form[f.name]) {
-          updates[f.name] = firstReal.value
-        }
-      } else if (f.defaultValue !== undefined && !form[f.name]) {
-        updates[f.name] = f.defaultValue
-      }
-    })
-    if (Object.keys(updates).length > 0) setForm((prev) => ({ ...prev, ...updates }))
-  }, [fields])
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault()
@@ -49,7 +32,7 @@ export default function TransactionForm({ title, endpoint, fields }: Props) {
       setMsg('Opération effectuée avec succès.')
       setForm({})
     } catch (err: any) {
-      setError(parseError(err, 'Erreur lors de l\'opération.'))
+      setError(err.response?.data?.message ?? 'Erreur lors de l\'opération.')
     } finally {
       setLoading(false)
     }

@@ -2,7 +2,6 @@
 import { useEffect, useState, FormEvent } from 'react'
 import api from '../../api/axios'
 import Card from '../../components/Card'
-import { parseError } from '../../api/parseError'
 
 interface BusinessRule { id: string; ruleType: string; value: string }
 interface Operator { id: string; name: string; code: string; country: string; status: string; rules: BusinessRule[] }
@@ -48,7 +47,8 @@ export default function OperateursPage() {
       setName(''); setCode(''); setCountry(''); setCommissionRate(''); setCeiling('')
       fetchOperators()
     } catch (err: any) {
-      setError(parseError(err, "Impossible de créer l'opérateur."))
+      const message = err.response?.data?.message
+      setError(typeof message === 'string' ? message : "Impossible de créer l'opérateur.")
     }
   }
 
@@ -66,7 +66,8 @@ export default function OperateursPage() {
       setAccMsg('Compte opérateur créé. Cette personne peut maintenant se connecter avec ces identifiants.')
       setAccUsername(''); setAccPassword(''); setAccEmail(''); setAccOperatorId('')
     } catch (err: any) {
-      setAccError(parseError(err, "Impossible de créer le compte opérateur."))
+      const message = err.response?.data?.message
+      setAccError(typeof message === 'string' ? message : "Impossible de créer le compte opérateur.")
     }
   }
 

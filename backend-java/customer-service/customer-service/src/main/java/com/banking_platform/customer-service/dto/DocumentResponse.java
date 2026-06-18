@@ -16,8 +16,6 @@ public class DocumentResponse {
     private String documentType;
     private String fileUrl;
     private boolean verified;
-    private UUID customerId;
-    private String customerName;
 
     // Getters et Setters
     public UUID getId() { return id; }
@@ -31,10 +29,4 @@ public class DocumentResponse {
 
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }
-
-    public UUID getCustomerId() { return customerId; }
-    public void setCustomerId(UUID customerId) { this.customerId = customerId; }
-
-    public String getCustomerName() { return customerName; }
-    public void setCustomerName(String customerName) { this.customerName = customerName; }
 }

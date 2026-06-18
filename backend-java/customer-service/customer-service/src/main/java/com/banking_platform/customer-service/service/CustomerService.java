@@ -159,49 +159,6 @@ public class CustomerService {
     }
 
     /**
-     * Liste tous les documents (pour l'admin).
-     */
-    @Transactional(readOnly = true)
-    public List<DocumentResponse> getAllDocuments() {
-        return documentRepository.findAll().stream()
-                .map(doc -> {
-                    DocumentResponse r = mapToDocumentResponse(doc);
-                    // ajoute le customerId dans la reponse
-                    if (doc.getCustomer() != null) {
-                        r.setCustomerId(doc.getCustomer().getId());
-                        r.setCustomerName(doc.getCustomer().getFirstName() + " " + doc.getCustomer().getLastName());
-                    }
-                    return r;
-                })
-                .collect(Collectors.toList());
-    }
-
-    /**
-     * Valide manuellement un document (appel admin).
-     */
-    @Transactional
-    public DocumentResponse verifyDocument(UUID documentId) {
-        DocumentReference document = documentRepository.findById(documentId)
-                .orElseThrow(() -> new RuntimeException("Document non trouve"));
-        document.setVerified(true);
-        documentRepository.save(document);
-
-        // Met a jour le KYC du client
-        Customer customer = document.getCustomer();
-        if (customer != null && customer.getKycStatus() != KycStatus.VERIFIED) {
-            customer.setKycStatus(KycStatus.VERIFIED);
-            customerRepository.save(customer);
-        }
-
-        DocumentResponse r = mapToDocumentResponse(document);
-        if (customer != null) {
-            r.setCustomerId(customer.getId());
-            r.setCustomerName(customer.getFirstName() + " " + customer.getLastName());
-        }
-        return r;
-    }
-
-    /**
      * Liste les notifications d'un client (plus recentes en premier).
      */
     public List<NotificationResponse> getNotifications(UUID customerId) {

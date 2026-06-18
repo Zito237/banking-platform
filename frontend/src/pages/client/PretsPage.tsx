@@ -2,7 +2,6 @@
 import { useEffect, useState, FormEvent } from 'react'
 import api from '../../api/axios'
 import Card from '../../components/Card'
-import { parseError } from '../../api/parseError'
 
 interface LoanApplication {
   id: string
@@ -50,7 +49,8 @@ export default function PretsPage() {
       setAmount(''); setPurpose('')
       fetchLoans(customerId)
     } catch (err: any) {
-      setError(parseError(err, 'Impossible de soumettre la demande.'))
+      const message = err.response?.data?.message
+      setError(typeof message === 'string' ? message : 'Impossible de soumettre la demande.')
     }
   }
 

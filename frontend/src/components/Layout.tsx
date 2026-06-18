@@ -15,18 +15,15 @@ const clientLinks: NavItem[] = [
   { label: 'Notifications', to: '/notifications' },
 ]
 
-const adminLinks: NavItem[] = [
-  { label: 'Opérateurs', to: '/operateurs' },
-  { label: 'Documents KYC', to: '/documents-kyc' },
-  { label: 'Audit', to: '/audit' },
-  { label: 'Rapports', to: '/rapports-admin' },
-  { label: 'Statut des services', to: '/services' },
-]
-
 const operatorLinks: NavItem[] = [
   { label: 'Demandes de prêt', to: '/demandes-pret' },
   { label: 'Rapports', to: '/rapports' },
-  { label: 'Statut des services', to: '/services' },
+]
+
+const adminLinks: NavItem[] = [
+  { label: 'Opérateurs', to: '/operateurs' },
+  { label: 'Audit', to: '/audit' },
+  { label: 'Rapports', to: '/rapports-admin' },
 ]
 
 export default function Layout() {

@@ -2,7 +2,6 @@
 import { useEffect, useState, FormEvent } from 'react'
 import api from '../../api/axios'
 import Card from '../../components/Card'
-import { parseError } from '../../api/parseError'
 
 interface Operator { id: string; name: string; code: string }
 interface Customer { id: string; firstName: string; lastName: string; email: string; kycStatus: string; operatorId: string }
@@ -60,7 +59,8 @@ export default function ProfilPage() {
       setMsg('Profil créé et associé avec succès.')
       load()
     } catch (err: any) {
-      setError(parseError(err, 'Impossible de créer le profil.'))
+      const message = err.response?.data?.message
+      setError(typeof message === 'string' ? message : 'Impossible de créer le profil.')
     }
   }
 
@@ -78,7 +78,8 @@ export default function ProfilPage() {
       setMsg('Compte ouvert avec succès.')
       load()
     } catch (err: any) {
-      setError(parseError(err, "Impossible d'ouvrir le compte."))
+      const message = err.response?.data?.message
+      setError(typeof message === 'string' ? message : "Impossible d'ouvrir le compte.")
     }
   }
 
