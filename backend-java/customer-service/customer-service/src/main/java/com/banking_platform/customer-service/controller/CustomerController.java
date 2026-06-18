@@ -81,6 +81,24 @@ public class CustomerController {
     }
 
     /**
+     * GET /documents
+     * Liste tous les documents soumis (pour l'administration).
+     */
+    @GetMapping("/documents")
+    public ResponseEntity<List<DocumentResponse>> getAllDocuments() {
+        return ResponseEntity.ok(customerService.getAllDocuments());
+    }
+
+    /**
+     * PATCH /documents/{id}/verify
+     * Valide manuellement un document (action admin).
+     */
+    @PatchMapping("/documents/{id}/verify")
+    public ResponseEntity<DocumentResponse> verifyDocument(@PathVariable UUID id) {
+        return ResponseEntity.ok(customerService.verifyDocument(id));
+    }
+
+    /**
      * GET /customers/notifications?customerId=...
      * Liste les notifications d'un client (plus recentes en premier).
      */

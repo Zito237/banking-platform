@@ -17,6 +17,7 @@ const clientLinks: NavItem[] = [
 
 const adminLinks: NavItem[] = [
   { label: 'Opérateurs', to: '/operateurs' },
+  { label: 'Documents KYC', to: '/documents-kyc' },
   { label: 'Audit', to: '/audit' },
   { label: 'Rapports', to: '/rapports-admin' },
   { label: 'Statut des services', to: '/services' },
