@@ -19,6 +19,7 @@ import RapportsPage from './pages/operator/RapportsPage'
 import OperateursPage from './pages/admin/OperateursPage'
 import AuditPage from './pages/admin/AuditPage'
 import RapportsAdminPage from './pages/admin/RapportsAdminPage'
+import ServicesPage from './pages/ServicesPage'
 
 function HomeRedirect() {
   const { user } = useAuth()
@@ -54,6 +55,7 @@ export default function App() {
             <Route path="operateurs" element={<OperateursPage />} />
             <Route path="audit" element={<AuditPage />} />
             <Route path="rapports-admin" element={<RapportsAdminPage />} />
+            <Route path="services" element={<ServicesPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

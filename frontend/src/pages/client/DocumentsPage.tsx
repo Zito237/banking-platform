@@ -2,10 +2,18 @@
 import { useEffect, useState, FormEvent } from 'react'
 import api from '../../api/axios'
 import Card from '../../components/Card'
+import { parseError } from '../../api/parseError'
 
 interface Doc { id: string; documentType: string; fileUrl: string; verified: boolean }
 
-const DOCUMENT_TYPES = ['ID_CARD', 'PASSPORT', 'PROOF_OF_ADDRESS', 'INCOME_PROOF']
+const DOCUMENT_TYPES = [
+  'ID_CARD',
+  'PASSPORT',
+  'PROOF_OF_RESIDENCE',
+  'PAYSLIP',
+  'BANK_STATEMENT',
+  'WORK_CONTRACT',
+]
 
 export default function DocumentsPage() {
   const [docs, setDocs] = useState<Doc[]>([])
@@ -43,8 +51,7 @@ export default function DocumentsPage() {
       setFileUrl('')
       fetchDocs(customerId)
     } catch (err: any) {
-      const message = err.response?.data?.message
-      setError(typeof message === 'string' ? message : 'Impossible de soumettre le document.')
+      setError(parseError(err, 'Impossible de soumettre le document.'))
     }
   }
 

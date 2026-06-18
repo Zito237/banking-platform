@@ -3,6 +3,7 @@ import { useState, FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import { useAuth } from '../context/AuthContext'
+import { parseError } from '../api/parseError'
 
 export default function LoginPage() {
   const { login } = useAuth()
@@ -29,14 +30,7 @@ export default function LoginPage() {
         navigate('/')
       }
     } catch (err: any) {
-      const message = err.response?.data?.message
-      if (typeof message === 'string') {
-        setError(message)
-      } else if (message && typeof message === 'object') {
-        setError(Object.values(message).join(' '))
-      } else {
-        setError('Une erreur est survenue.')
-      }
+      setError(parseError(err, 'Une erreur est survenue.'))
     } finally {
       setLoading(false)
     }

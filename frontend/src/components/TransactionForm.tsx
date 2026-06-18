@@ -2,6 +2,7 @@
 import { useState, useEffect, FormEvent } from 'react'
 import api from '../api/axios'
 import Card from '../components/Card'
+import { parseError } from '../api/parseError'
 
 interface Field { name: string; label: string; type?: string; options?: { value: string; label: string }[]; defaultValue?: string }
 
@@ -48,7 +49,7 @@ export default function TransactionForm({ title, endpoint, fields }: Props) {
       setMsg('Opération effectuée avec succès.')
       setForm({})
     } catch (err: any) {
-      setError(err.response?.data?.message ?? 'Erreur lors de l\'opération.')
+      setError(parseError(err, 'Erreur lors de l\'opération.'))
     } finally {
       setLoading(false)
     }
