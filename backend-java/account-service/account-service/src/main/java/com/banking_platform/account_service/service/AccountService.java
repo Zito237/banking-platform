@@ -3,6 +3,7 @@ package com.banking_platform.account_service.service;
 import com.banking_platform.account_service.client.CustomerClient;
 import com.banking_platform.account_service.dto.*;
 import com.banking_platform.account_service.entity.Account;
+import com.banking_platform.account_service.entity.AccountStatus;
 import com.banking_platform.account_service.exception.InsufficientBalanceException;
 import com.banking_platform.account_service.exception.ResourceNotFoundException;
 import com.banking_platform.account_service.repository.AccountRepository;
@@ -59,6 +60,23 @@ public class AccountService {
             throw new InsufficientBalanceException("Solde insuffisant");
         }
         account.setBalance(account.getBalance().subtract(amount));
+        return toResponse(repo.save(account));
+    }
+
+    public AccountResponse getByAccountNumber(String accountNumber) {
+        Account account = repo.findByAccountNumber(accountNumber)
+            .orElseThrow(() -> new ResourceNotFoundException("Compte introuvable : " + accountNumber));
+        return toResponse(account);
+    }
+
+    public List<AccountResponse> getAll() {
+        return repo.findAll().stream().map(this::toResponse).toList();
+    }
+
+    @Transactional
+    public AccountResponse updateStatus(UUID id, AccountStatus status) {
+        Account account = findOrThrow(id);
+        account.setStatus(status);
         return toResponse(repo.save(account));
     }
 

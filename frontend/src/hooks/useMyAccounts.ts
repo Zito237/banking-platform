@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import api from '../api/axios'
 
 interface AccountOption { value: string; label: string }
 
 export function useMyAccounts() {
   const [options, setOptions] = useState<AccountOption[]>([])
+  const [refreshKey, setRefreshKey] = useState(0)
+
+  const refresh = useCallback(() => setRefreshKey((k) => k + 1), [])
 
   useEffect(() => {
     api.get('/auth/me')
@@ -17,14 +20,16 @@ export function useMyAccounts() {
         if (!res) return
         const accounts: any[] = res.data
         setOptions(
-          accounts.map((a) => ({
-            value: a.id,
-            label: `${a.accountNumber} — ${a.accountType} (${a.balance} ${a.currency})`,
-          }))
+          accounts
+            .filter((a) => a.status === 'ACTIVE')
+            .map((a) => ({
+              value: a.id,
+              label: `${a.accountNumber} — ${a.accountType === 'CURRENT' ? 'Courant' : a.accountType === 'SAVINGS' ? 'Épargne' : 'Portefeuille'} (${Number(a.balance).toLocaleString('fr-FR')} ${a.currency})`,
+            }))
         )
       })
       .catch(() => {})
-  }, [])
+  }, [refreshKey])
 
-  return options
+  return { options, refresh }
 }

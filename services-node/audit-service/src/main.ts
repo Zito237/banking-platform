@@ -1,21 +1,16 @@
-// Point d'entree de l'application NestJS
-import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
+import { NestFactory } from '@nestjs/core'
+import { AppModule } from './app.module'
 
 async function bootstrap() {
-  // Cree l'application NestJS en mode HTTP (pour les endpoints REST)
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule)
+  app.enableCors()
 
-  // Active CORS pour le frontend
-  app.enableCors();
+  const port = process.env.PORT || 9003
+  await app.listen(port)
 
-  // Ecoute sur le port 9009
-  const port = process.env.PORT || 9009;
-  await app.listen(port);
-
-  console.log(`[AUDIT] Service HTTP demarre sur le port ${port}`);
-  console.log(`[AUDIT] Health check : http://localhost:${port}/health`);
-  console.log(`[AUDIT] Logs audit : http://localhost:${port}/audit`);
+  console.log(`[AUDIT] Service HTTP demarre sur le port ${port}`)
+  console.log(`[AUDIT] Health : http://localhost:${port}/health`)
+  console.log(`[AUDIT] Logs   : http://localhost:${port}/audit`)
 }
 
-bootstrap();
+bootstrap()

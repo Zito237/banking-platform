@@ -37,6 +37,18 @@ public class TransactionController {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.transfer(req));
     }
 
+    @Operation(summary = "Loan repayment")
+    @PostMapping("/transactions/repayment")
+    public ResponseEntity<TransactionResponse> repayment(@Valid @RequestBody RepaymentRequest req) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(service.repayment(req));
+    }
+
+    @Operation(summary = "All transactions (admin/reporting)")
+    @GetMapping("/transactions/all")
+    public List<TransactionResponse> allTransactions() {
+        return service.getAllTransactions();
+    }
+
     @Operation(summary = "Transaction history")
     @GetMapping("/transactions")
     public List<TransactionResponse> history(@RequestParam UUID accountId) {

@@ -91,6 +91,44 @@ public class OperatorService {
     }
 
     /**
+     * Met a jour les informations modifiables d'un operateur (nom, pays, regles).
+     * Le code n'est pas modifiable car il sert d'identifiant metier unique.
+     */
+    @Transactional
+    public OperatorResponse updateOperator(UUID id, OperatorUpdateRequest request) {
+        Operator operator = operatorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Operateur non trouve"));
+
+        if (request.getName() != null && !request.getName().isBlank()) {
+            operator.setName(request.getName());
+        }
+        if (request.getCountry() != null && !request.getCountry().isBlank()) {
+            operator.setCountry(request.getCountry());
+        }
+        if (request.getRules() != null && !request.getRules().isEmpty()) {
+            operator.getRules().clear();
+            for (BusinessRuleRequest ruleReq : request.getRules()) {
+                RuleType ruleType = RuleType.valueOf(ruleReq.getRuleType().toUpperCase());
+                BusinessRule rule = new BusinessRule(ruleType, ruleReq.getValue());
+                operator.addRule(rule);
+            }
+        }
+
+        return mapToResponse(operatorRepository.save(operator));
+    }
+
+    /**
+     * Suspend ou reactive un operateur.
+     */
+    @Transactional
+    public OperatorResponse updateStatus(UUID id, OperatorStatus status) {
+        Operator operator = operatorRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Operateur non trouve"));
+        operator.setStatus(status);
+        return mapToResponse(operatorRepository.save(operator));
+    }
+
+    /**
      * Recupere le taux de commission d'un operateur.
      * Cherche la regle de type COMMISSION et extrait le taux.
      * Ex: "1.5%" -> 1.5

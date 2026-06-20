@@ -49,4 +49,22 @@ public class AccountController {
     public AccountResponse debit(@PathVariable UUID id, @Valid @RequestBody AmountRequest req) {
         return service.debit(id, req.amount());
     }
+
+    @Operation(summary = "Find account by account number")
+    @GetMapping("/by-number/{accountNumber}")
+    public AccountResponse getByAccountNumber(@PathVariable String accountNumber) {
+        return service.getByAccountNumber(accountNumber);
+    }
+
+    @Operation(summary = "List all accounts (admin)")
+    @GetMapping("/all")
+    public List<AccountResponse> getAll() {
+        return service.getAll();
+    }
+
+    @Operation(summary = "Change account status (admin)")
+    @PatchMapping("/{id}/status")
+    public AccountResponse updateStatus(@PathVariable UUID id, @Valid @RequestBody StatusRequest req) {
+        return service.updateStatus(id, req.status());
+    }
 }

@@ -1,7 +1,8 @@
-// Prêts client : voir ses demandes + demander un nouveau prêt
 import { useEffect, useState, FormEvent } from 'react'
 import api from '../../api/axios'
 import Card from '../../components/Card'
+import LoanScheduleTable from '../../components/LoanScheduleTable'
+import { parseError } from '../../api/parseError'
 
 interface LoanApplication {
   id: string
@@ -13,6 +14,28 @@ interface LoanApplication {
   decisionReason?: string
 }
 
+interface LoanSchedule {
+  principal: number
+  interestRate: number
+  termMonths: number
+  installments: {
+    id: string
+    dueDate: string
+    amount: number
+    principalPart: number
+    interestPart: number
+    status: string
+    paidAt?: string
+  }[]
+}
+
+const STATUS_STYLE: Record<string, { color: string; label: string }> = {
+  SUBMITTED:    { color: 'bg-yellow-100 text-yellow-700', label: 'Soumis'    },
+  UNDER_REVIEW: { color: 'bg-blue-100   text-blue-700',   label: 'En examen' },
+  APPROVED:     { color: 'bg-green-100  text-green-700',  label: 'Approuvé'  },
+  REJECTED:     { color: 'bg-red-100    text-red-700',    label: 'Rejeté'    },
+}
+
 export default function PretsPage() {
   const [loans, setLoans] = useState<LoanApplication[]>([])
   const [customerId, setCustomerId] = useState<string | null>(null)
@@ -22,6 +45,10 @@ export default function PretsPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
 
+  // Schedule state: loanId → LoanSchedule | 'loading' | 'error'
+  const [schedules, setSchedules] = useState<Record<string, LoanSchedule | 'loading' | 'error'>>({})
+  const [openSchedule, setOpenSchedule] = useState<Record<string, boolean>>({})
+
   const fetchLoans = (custId: string) =>
     api.get('/loans', { params: { customerId: custId } }).then((r) => setLoans(r.data))
 
@@ -29,7 +56,7 @@ export default function PretsPage() {
     api.get('/auth/me')
       .then(({ data }) => {
         if (!data.linkedCustomerId) {
-          setError('Aucun profil client n\'est encore associé à votre compte.')
+          setError("Aucun profil client n'est encore associé à votre compte.")
           return
         }
         setCustomerId(data.linkedCustomerId)
@@ -49,16 +76,29 @@ export default function PretsPage() {
       setAmount(''); setPurpose('')
       fetchLoans(customerId)
     } catch (err: any) {
-      const message = err.response?.data?.message
-      setError(typeof message === 'string' ? message : 'Impossible de soumettre la demande.')
+      setError(parseError(err, 'Impossible de soumettre la demande.'))
     }
   }
 
-  const statusColor: Record<string, string> = {
-    SUBMITTED: 'bg-yellow-100 text-yellow-700',
-    UNDER_REVIEW: 'bg-blue-100 text-blue-700',
-    APPROVED: 'bg-green-100 text-green-700',
-    REJECTED: 'bg-red-100 text-red-700',
+  async function toggleSchedule(loanId: string) {
+    const nowOpen = !openSchedule[loanId]
+    setOpenSchedule((prev) => ({ ...prev, [loanId]: nowOpen }))
+
+    if (nowOpen && !schedules[loanId]) {
+      setSchedules((prev) => ({ ...prev, [loanId]: 'loading' }))
+      try {
+        const { data } = await api.get(`/loans/by-application/${loanId}`)
+        const loanInfo: LoanSchedule = {
+          principal:    data.principal,
+          interestRate: data.interestRate,
+          termMonths:   data.termMonths,
+          installments: data.schedule?.installments ?? [],
+        }
+        setSchedules((prev) => ({ ...prev, [loanId]: loanInfo }))
+      } catch {
+        setSchedules((prev) => ({ ...prev, [loanId]: 'error' }))
+      }
+    }
   }
 
   return (
@@ -98,36 +138,67 @@ export default function PretsPage() {
       </Card>
 
       <Card title="Mes demandes de prêt">
-        {loading ? <p className="text-slate-400 text-sm">Chargement...</p> : (
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-slate-400 border-b">
-                <th className="pb-2">Montant</th>
-                <th className="pb-2">Objet</th>
-                <th className="pb-2">Statut</th>
-                <th className="pb-2">Soumis le</th>
-                <th className="pb-2">Motif décision</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loans.map((l) => (
-                <tr key={l.id} className="border-b last:border-0">
-                  <td className="py-2">{l.requestedAmount.toLocaleString('fr-FR')} FCFA</td>
-                  <td className="py-2 text-slate-500">{l.purpose}</td>
-                  <td className="py-2">
-                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${statusColor[l.status] ?? 'bg-slate-100 text-slate-600'}`}>
-                      {l.status}
+        {loading ? (
+          <p className="text-slate-400 text-sm">Chargement...</p>
+        ) : (
+          <div className="space-y-3">
+            {loans.map((l) => {
+              const s = STATUS_STYLE[l.status] ?? { color: 'bg-slate-100 text-slate-600', label: l.status }
+              const isApproved = l.status === 'APPROVED'
+              const scheduleOpen = openSchedule[l.id]
+              const schedule = schedules[l.id]
+
+              return (
+                <div key={l.id} className="border border-slate-100 rounded-xl p-4 space-y-2 hover:border-slate-200 transition">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-slate-800">
+                        {Number(l.requestedAmount).toLocaleString('fr-FR')} FCFA
+                        <span className="font-normal text-slate-500"> — {l.purpose}</span>
+                      </p>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Soumis le {new Date(l.submittedAt).toLocaleDateString('fr-FR')}
+                      </p>
+                    </div>
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium shrink-0 ${s.color}`}>
+                      {s.label}
                     </span>
-                  </td>
-                  <td className="py-2 text-slate-400 text-xs">{new Date(l.submittedAt).toLocaleDateString('fr-FR')}</td>
-                  <td className="py-2 text-slate-500 text-xs">{l.decisionReason ?? '—'}</td>
-                </tr>
-              ))}
-              {loans.length === 0 && (
-                <tr><td colSpan={5} className="py-4 text-slate-400 text-center">Aucune demande de prêt.</td></tr>
-              )}
-            </tbody>
-          </table>
+                  </div>
+
+                  {l.decisionReason && (
+                    <p className="text-xs text-slate-500 bg-slate-50 rounded-lg px-3 py-2">
+                      <span className="font-medium">Motif :</span> {l.decisionReason}
+                    </p>
+                  )}
+
+                  {isApproved && (
+                    <div>
+                      <button
+                        onClick={() => toggleSchedule(l.id)}
+                        className="text-xs text-blue-600 hover:text-blue-800 font-medium transition"
+                      >
+                        {scheduleOpen ? '▲ Masquer l\'échéancier' : '▼ Voir l\'échéancier'}
+                      </button>
+
+                      {scheduleOpen && (
+                        schedule === 'loading' ? (
+                          <p className="text-xs text-slate-400 mt-2">Chargement de l'échéancier...</p>
+                        ) : schedule === 'error' ? (
+                          <p className="text-xs text-red-500 mt-2">Impossible de charger l'échéancier.</p>
+                        ) : schedule ? (
+                          <LoanScheduleTable loan={schedule} />
+                        ) : null
+                      )}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+
+            {loans.length === 0 && (
+              <p className="py-4 text-slate-400 text-center text-sm">Aucune demande de prêt.</p>
+            )}
+          </div>
         )}
       </Card>
     </div>

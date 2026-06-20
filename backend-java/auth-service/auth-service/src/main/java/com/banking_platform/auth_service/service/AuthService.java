@@ -164,6 +164,39 @@ public class AuthService {
     }
 
     /**
+     * Liste tous les utilisateurs (pour l'administration).
+     */
+    public java.util.List<UserInfoResponse> listAllUsers() {
+        return userRepository.findAll().stream()
+                .map(u -> {
+                    UserInfoResponse r = new UserInfoResponse();
+                    r.setId(u.getId());
+                    r.setUsername(u.getUsername());
+                    r.setEmail(u.getEmail());
+                    r.setEnabled(u.isEnabled());
+                    r.setOperatorId(u.getOperatorId());
+                    r.setLinkedCustomerId(u.getLinkedCustomerId());
+                    r.setRoles(u.getRoles().stream()
+                            .map(role -> role.getName().name())
+                            .collect(java.util.stream.Collectors.toSet()));
+                    return r;
+                })
+                .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Active ou desactive un compte utilisateur.
+     */
+    @Transactional
+    public UserInfoResponse toggleUserEnabled(java.util.UUID userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouve"));
+        user.setEnabled(!user.isEnabled());
+        userRepository.save(user);
+        return getUserInfo(user.getUsername());
+    }
+
+    /**
      * Recupere les informations d'un utilisateur a partir de son username.
      */
     public UserInfoResponse getUserInfo(String username) {

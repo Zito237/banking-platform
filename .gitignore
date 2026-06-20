@@ -69,6 +69,14 @@ docker-compose.override.yml
 .vscode/tasks.json
 .vscode/launch.json
 
+# Runtime data (bases H2, SQLite, logs d'audit — ne pas versionner)
+data/
+config-local/
+*.db
+*.db-shm
+*.db-wal
+services-node/*/data/
+
 # Misc
 *.swp
 *.swo

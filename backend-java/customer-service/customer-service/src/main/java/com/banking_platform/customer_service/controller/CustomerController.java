@@ -18,6 +18,7 @@ import com.banking_platform.customer_service.dto.DocumentResponse;
 import com.banking_platform.customer_service.dto.DocumentRequest;
 import com.banking_platform.customer_service.dto.CustomerResponse;
 import com.banking_platform.customer_service.dto.CustomerRequest;
+import com.banking_platform.customer_service.dto.CustomerUpdateRequest;
 import com.banking_platform.customer_service.dto.NotificationResponse;
 import com.banking_platform.customer_service.service.CustomerService;
 import jakarta.validation.Valid;
@@ -56,6 +57,17 @@ public class CustomerController {
     public ResponseEntity<CustomerResponse> getCustomer(@PathVariable UUID id) {
         CustomerResponse response = customerService.getCustomer(id);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * PUT /customers/{id}
+     * Met a jour les informations modifiables d'un client (nom, telephone, adresse, date de naissance).
+     */
+    @PutMapping("/customers/{id}")
+    public ResponseEntity<CustomerResponse> updateCustomer(
+            @PathVariable UUID id,
+            @Valid @RequestBody CustomerUpdateRequest request) {
+        return ResponseEntity.ok(customerService.updateCustomer(id, request));
     }
 
     /**

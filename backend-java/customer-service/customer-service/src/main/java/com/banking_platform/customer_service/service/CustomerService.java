@@ -32,6 +32,7 @@ import com.banking_platform.customer_service.repository.CustomerRepository;
 import com.banking_platform.customer_service.repository.DocumentRepository;
 import com.banking_platform.customer_service.repository.NotificationRepository;
 import com.banking_platform.customer_service.dto.CustomerRequest;
+import com.banking_platform.customer_service.dto.CustomerUpdateRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -108,6 +109,26 @@ public class CustomerService {
      */
     public boolean existsById(UUID id) {
         return customerRepository.existsById(id);
+    }
+
+    /**
+     * Met a jour les informations modifiables d'un client (nom, telephone, adresse, date de naissance).
+     * L'email, le numero d'identite et l'operateur ne peuvent pas etre changes.
+     */
+    @Transactional
+    public CustomerResponse updateCustomer(UUID id, CustomerUpdateRequest request) {
+        Customer customer = customerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client non trouve"));
+
+        customer.setFirstName(request.getFirstName());
+        customer.setLastName(request.getLastName());
+        customer.setDateOfBirth(request.getDateOfBirth());
+        customer.setPhone(request.getPhone());
+        customer.setAddress(request.getAddress());
+
+        Customer saved = customerRepository.save(customer);
+        logger.info("Client mis a jour : id={}", saved.getId());
+        return mapToResponse(saved);
     }
 
     /**

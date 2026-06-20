@@ -89,6 +89,15 @@ public class LoanController {
     }
 
     /**
+     * GET /loans/by-application/{applicationId}
+     * Renvoie le prêt (avec échéancier) créé à partir d'une demande approuvée.
+     */
+    @GetMapping("/by-application/{applicationId}")
+    public ResponseEntity<LoanResponse> getLoanByApplication(@PathVariable UUID applicationId) {
+        return ResponseEntity.ok(loanService.getLoanByApplicationId(applicationId));
+    }
+
+    /**
      * POST /loans/{id}/repay
      * Rembourse une mensualité.
      * Appelle transaction-service pour débiter le compte client.

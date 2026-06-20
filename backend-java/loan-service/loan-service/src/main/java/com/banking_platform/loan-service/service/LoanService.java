@@ -259,6 +259,12 @@ public class LoanService {
         return mapToScheduleResponse(schedule);
     }
 
+    public LoanResponse getLoanByApplicationId(UUID applicationId) {
+        Loan loan = loanRepository.findByApplicationId(applicationId)
+                .orElseThrow(() -> new RuntimeException("Prêt non trouvé pour cette demande"));
+        return mapToLoanResponse(loan);
+    }
+
     /**
      * Rembourse une mensualité.
      * 1. Appelle transaction-service pour débiter le compte client

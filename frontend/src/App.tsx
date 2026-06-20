@@ -12,13 +12,19 @@ import TransfertPage from './pages/client/TransfertPage'
 import PretsPage from './pages/client/PretsPage'
 import DocumentsPage from './pages/client/DocumentsPage'
 import NotificationsPage from './pages/client/NotificationsPage'
+import HistoriquePage from './pages/client/HistoriquePage'
+import RemboursementPage from './pages/client/RemboursementPage'
 
 import DemandesPretPage from './pages/operator/DemandesPretPage'
 import RapportsPage from './pages/operator/RapportsPage'
 
 import OperateursPage from './pages/admin/OperateursPage'
+import ComptesAdminPage from './pages/admin/ComptesAdminPage'
 import AuditPage from './pages/admin/AuditPage'
 import RapportsAdminPage from './pages/admin/RapportsAdminPage'
+import DocumentsKycPage from './pages/admin/DocumentsKycPage'
+import UtilisateursAdminPage from './pages/admin/UtilisateursAdminPage'
+import ServicesPage from './pages/ServicesPage'
 
 function HomeRedirect() {
   const { user } = useAuth()
@@ -49,11 +55,17 @@ export default function App() {
             <Route path="prets" element={<PretsPage />} />
             <Route path="documents" element={<DocumentsPage />} />
             <Route path="notifications" element={<NotificationsPage />} />
+            <Route path="historique" element={<HistoriquePage />} />
+            <Route path="remboursement" element={<RemboursementPage />} />
             <Route path="demandes-pret" element={<DemandesPretPage />} />
             <Route path="rapports" element={<RapportsPage />} />
             <Route path="operateurs" element={<OperateursPage />} />
+            <Route path="comptes-admin" element={<ComptesAdminPage />} />
             <Route path="audit" element={<AuditPage />} />
             <Route path="rapports-admin" element={<RapportsAdminPage />} />
+            <Route path="documents-kyc" element={<DocumentsKycPage />} />
+            <Route path="utilisateurs" element={<UtilisateursAdminPage />} />
+            <Route path="services" element={<ServicesPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

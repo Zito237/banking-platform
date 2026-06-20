@@ -115,6 +115,32 @@ public class TransactionService {
         return toResponse(tx);
     }
 
+    public List<TransactionResponse> getAllTransactions() {
+        return repo.findAll().stream().map(this::toResponse).toList();
+    }
+
+    public TransactionResponse repayment(RepaymentRequest req) {
+        Transaction tx = new Transaction();
+        tx.setReference(req.reference() != null ? req.reference() : "REPAY-" + UUID.randomUUID());
+        tx.setType(TransactionType.REPAYMENT);
+        tx.setAmount(req.amount());
+        tx.setSourceAccountId(req.accountId());
+        repo.save(tx);
+
+        try {
+            accountClient.debit(req.accountId(), Map.of("amount", req.amount()));
+            tx.setStatus(TransactionStatus.COMPLETED);
+            repo.save(tx);
+            publishCompleted(tx);
+        } catch (Exception e) {
+            tx.setStatus(TransactionStatus.FAILED);
+            repo.save(tx);
+            publishFailed(tx, e.getMessage());
+            throw e;
+        }
+        return toResponse(tx);
+    }
+
     public List<TransactionResponse> getHistory(UUID accountId) {
         return repo.findByAccountId(accountId).stream().map(this::toResponse).toList();
     }

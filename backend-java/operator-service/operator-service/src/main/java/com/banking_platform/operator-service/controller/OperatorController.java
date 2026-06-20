@@ -66,6 +66,31 @@ public class OperatorController {
     }
 
     /**
+     * PUT /operators/{id}
+     * Met a jour les informations d'un operateur (nom, pays, regles).
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<OperatorResponse> updateOperator(
+            @PathVariable UUID id,
+            @RequestBody com.banking_platform.operator_service.dto.OperatorUpdateRequest request) {
+        return ResponseEntity.ok(operatorService.updateOperator(id, request));
+    }
+
+    /**
+     * PATCH /operators/{id}/status
+     * Suspend ou reactive un operateur.
+     * Body: { "status": "SUSPENDED" } ou { "status": "ACTIVE" }
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OperatorResponse> updateStatus(
+            @PathVariable UUID id,
+            @RequestBody java.util.Map<String, String> body) {
+        com.banking_platform.operator_service.entity.OperatorStatus status =
+                com.banking_platform.operator_service.entity.OperatorStatus.valueOf(body.get("status"));
+        return ResponseEntity.ok(operatorService.updateStatus(id, status));
+    }
+
+    /**
      * GET /operators/{id}/commission
      * Renvoie le taux de commission de l'operateur.
      * APPELE PAR transaction-service via OpenFeign lors d'un transfert inter-operateurs.

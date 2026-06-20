@@ -1,115 +1,127 @@
-// Service d'audit : consommateur RabbitMQ + logique de stockage MongoDB
-import { Injectable, OnModuleInit } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { EventPattern, Payload, Ctx, RmqContext } from '@nestjs/microservices';
-import { AuditLog } from '../schema/audit-log.schema';
+// Service d'audit : stockage JSON + consommateur RabbitMQ optionnel
+import { Injectable, OnModuleInit } from '@nestjs/common'
+import * as fs from 'fs'
+import * as path from 'path'
+import * as crypto from 'crypto'
+import { AuditLog } from '../schema/audit-log.schema'
 
+const DATA_DIR = process.env.AUDIT_DATA_DIR || path.join(process.cwd(), 'data')
+const DATA_FILE = path.join(DATA_DIR, 'audit-logs.json')
+const MAX_LOGS = 2000
+const RABBITMQ_URL = process.env.RABBITMQ_URL || 'amqp://localhost:5672'
+const EXCHANGE = 'banking.events'
 
 @Injectable()
 export class AuditService implements OnModuleInit {
+  private logs: AuditLog[] = []
 
-  // Injection du modele MongoDB AuditLog
-  constructor(
-    @InjectModel(AuditLog.name) private auditModel: Model<AuditLog>,
-  ) {}
-
-  // Au demarrage du module
-  onModuleInit() {
-    console.log('[AUDIT] Service d\'audit initialise');
-    console.log('[AUDIT] En attente des evenements RabbitMQ (toutes les routing keys #)...');
-
+  constructor() {
+    try {
+      fs.mkdirSync(DATA_DIR, { recursive: true })
+    } catch {}
+    this.loadLogs()
   }
 
-  // ============================================================
-  // PATTERN "#" : capture TOUS les evenements de l'exchange
-  // Le symbole # en RabbitMQ signifie "tous les sous-niveaux"
-  // ============================================================
-  @EventPattern('#')
-  async handleAllEvents(
-    @Payload() data: any,
-    @Ctx() context: RmqContext,
-  ) {
-    const channel = context.getChannelRef();
-    const originalMsg = context.getMessage();
+  private loadLogs() {
+    try {
+      if (fs.existsSync(DATA_FILE)) {
+        const raw = fs.readFileSync(DATA_FILE, 'utf-8')
+        this.logs = JSON.parse(raw)
+      }
+    } catch {
+      this.logs = []
+    }
+  }
 
-    // Recupere la routing key du message recu
-    const routingKey = context.getPattern();
+  private saveLogs() {
+    try {
+      if (this.logs.length > MAX_LOGS) {
+        this.logs = this.logs.slice(-MAX_LOGS)
+      }
+      fs.writeFileSync(DATA_FILE, JSON.stringify(this.logs, null, 2), 'utf-8')
+    } catch (e: any) {
+      console.warn('[AUDIT] Sauvegarde impossible :', e.message)
+    }
+  }
 
-    // Extrait les infos de l'evenement
-    const actor = this.extractActor(data, routingKey);
-    const action = this.formatAction(routingKey);
-    const resource = this.extractResource(routingKey);
+  onModuleInit() {
+    console.log(`[AUDIT] ${this.logs.length} entrees chargees depuis ${DATA_FILE}`)
+    this.connectRabbitMQ()
+  }
 
-    // Cree l'entree d'audit dans MongoDB
-    const auditEntry = new this.auditModel({
-      actor,
-      action,
-      resource,
+  private async connectRabbitMQ() {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const amqp = require('amqplib')
+      const conn = await amqp.connect(RABBITMQ_URL)
+      const channel = await conn.createChannel()
+
+      await channel.assertExchange(EXCHANGE, 'topic', { durable: true })
+      const { queue } = await channel.assertQueue('audit.queue.http', { durable: true })
+      await channel.bindQueue(queue, EXCHANGE, '#')
+
+      channel.consume(queue, (msg: any) => {
+        if (!msg) return
+        try {
+          const data = JSON.parse(msg.content.toString())
+          const routingKey: string = msg.fields.routingKey
+          this.createLog(data, routingKey)
+        } catch {}
+        channel.ack(msg)
+      })
+
+      console.log('[AUDIT] Connecte a RabbitMQ — ecoute tous les evenements')
+
+      conn.on('error', () => {
+        console.warn('[AUDIT] Connexion RabbitMQ perdue, tentative dans 30s')
+        setTimeout(() => this.connectRabbitMQ(), 30_000)
+      })
+    } catch (e: any) {
+      console.warn('[AUDIT] RabbitMQ indisponible :', e.message, '— retry dans 30s')
+      setTimeout(() => this.connectRabbitMQ(), 30_000)
+    }
+  }
+
+  createLog(data: any, routingKey: string, actorOverride?: string): AuditLog {
+    const log: AuditLog = {
+      id: crypto.randomUUID(),
+      actor: actorOverride || this.extractActor(data, routingKey),
+      action: routingKey.toUpperCase().replace(/\./g, '_'),
+      resource: routingKey.split('.')[0] || 'system',
       payload: data,
       routingKey,
-      timestamp: new Date(),
-    });
-
-    await auditEntry.save();
-
-    // Journalise dans la console
-    console.log('');
-    console.log('============================================================');
-    console.log('[AUDIT] 📋 NOUVELLE ENTREE D\'AUDIT ENREGISTREE');
-    console.log('============================================================');
-
-    console.log(`  Routing Key : ${routingKey}`);
-    console.log(`  Acteur      : ${actor}`);
-    console.log(`  Action      : ${action}`);
-    console.log(`  Ressource   : ${resource}`);
-    console.log(`  Timestamp   : ${new Date().toISOString()}`);
-    console.log(`  ID MongoDB  : ${auditEntry._id}`);
-    console.log('============================================================');
-
-    // Acquitte le message (supprime de la file)
-    channel.ack(originalMsg);
+      timestamp: new Date().toISOString(),
+    }
+    this.logs.push(log)
+    this.saveLogs()
+    console.log(`[AUDIT] ${log.action} | ${log.actor} | ${log.resource}`)
+    return log
   }
 
-  // ============================================================
-  // Recherche paginee des logs d'audit (pour l'admin)
-  // ============================================================
-  async findLogs(filters: {
-    resource?: string;
-    actor?: string;
-    action?: string;
-    from?: string;
-    to?: string;
-    page?: number;
-    limit?: number;
+  findLogs(filters: {
+    resource?: string
+    actor?: string
+    action?: string
+    from?: string
+    to?: string
+    page?: number
+    limit?: number
   }) {
-    const { resource, actor, action, from, to, page = 1, limit = 20 } = filters;
+    const { resource, actor, action, from, to, page = 1, limit = 20 } = filters
 
-    // Construction du filtre MongoDB
-    const query: any = {};
+    let filtered = [...this.logs].reverse()
 
-    if (resource) query.resource = resource;
-    if (actor) query.actor = actor;
-    if (action) query.action = action;
-    if (from || to) {
-      query.timestamp = {};
-      if (from) query.timestamp.$gte = new Date(from);
-      if (to) query.timestamp.$lte = new Date(to);
-    }
+    if (resource) filtered = filtered.filter((l) => l.resource === resource)
+    if (actor) filtered = filtered.filter((l) => l.actor.includes(actor))
+    if (action) filtered = filtered.filter((l) => l.action.includes(action.toUpperCase()))
+    if (from) filtered = filtered.filter((l) => new Date(l.timestamp) >= new Date(from))
+    if (to) filtered = filtered.filter((l) => new Date(l.timestamp) <= new Date(to))
 
-    // Compte total pour la pagination
-    const total = await this.auditModel.countDocuments(query);
-
-    // Recupere les logs avec pagination (du plus recent au plus ancien)
-    const logs = await this.auditModel
-      .find(query)
-      .sort({ timestamp: -1 })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .exec();
+    const total = filtered.length
+    const data = filtered.slice((page - 1) * limit, page * limit)
 
     return {
-      data: logs,
+      data,
       pagination: {
         page,
         limit,
@@ -118,41 +130,14 @@ export class AuditService implements OnModuleInit {
         hasNext: page * limit < total,
         hasPrev: page > 1,
       },
-    };
+    }
   }
-
-  // ============================================================
-  // Helpers : extraction des infos depuis l'evenement
-  // ============================================================
 
   private extractActor(data: any, routingKey: string): string {
-    // Essaie de trouver l'identifiant de l'acteur dans le payload
-    if (data.customerId || data.customer_id) {
-      return `client:${data.customerId || data.customer_id}`;
-    }
-    if (data.operatorId || data.operator_id) {
-      return `operator:${data.operatorId || data.operator_id}`;
-    }
-    if (data.userId || data.user_id) {
-      return `user:${data.userId || data.user_id}`;
-    }
-    if (data.actor) {
-      return data.actor;
-    }
-    // Par defaut, utilise la routing key comme identifiant
-    return `system:${routingKey}`;
-  }
-
-  private formatAction(routingKey: string): string {
-    // Convertit "transaction.completed" en "TRANSACTION_COMPLETED"
-    return routingKey.toUpperCase().replace(/\./g, '_');
-  }
-
-  private extractResource(routingKey: string): string {
-    // Extrait la ressource depuis la routing key
-    // "transaction.completed" -> "transaction"
-    // "loan.approved" -> "loan"
-    const parts = routingKey.split('.');
-    return parts[0] || 'unknown';
+    if (data?.customerId) return `client:${data.customerId}`
+    if (data?.operatorId) return `operator:${data.operatorId}`
+    if (data?.userId) return `user:${data.userId}`
+    if (data?.actor) return data.actor
+    return `system:${routingKey.split('.')[0]}`
   }
 }

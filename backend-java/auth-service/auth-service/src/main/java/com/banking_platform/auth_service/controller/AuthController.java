@@ -96,6 +96,33 @@ public class AuthController {
     }
 
     /**
+     * GET /auth/users
+     * Liste tous les comptes utilisateurs (reserve aux admins).
+     */
+    @GetMapping("/users")
+    public ResponseEntity<?> listUsers(
+            @RequestHeader(value = "X-User-Roles", required = false) String roles) {
+        if (roles == null || !roles.contains("ADMIN")) {
+            return ResponseEntity.status(403).body(java.util.Map.of("message", "Reserve aux administrateurs"));
+        }
+        return ResponseEntity.ok(authService.listAllUsers());
+    }
+
+    /**
+     * PATCH /auth/users/{id}/enabled
+     * Active ou desactive un compte utilisateur.
+     */
+    @PatchMapping("/users/{id}/enabled")
+    public ResponseEntity<?> toggleUserEnabled(
+            @RequestHeader(value = "X-User-Roles", required = false) String roles,
+            @PathVariable java.util.UUID id) {
+        if (roles == null || !roles.contains("ADMIN")) {
+            return ResponseEntity.status(403).body(java.util.Map.of("message", "Reserve aux administrateurs"));
+        }
+        return ResponseEntity.ok(authService.toggleUserEnabled(id));
+    }
+
+    /**
      * PUT /auth/me/link-customer
      * Associe le profil client (cree dans customer-service) au compte connecte.
      * Permet d'acceder aux espaces "Mes comptes", "Prets" et "Documents".
