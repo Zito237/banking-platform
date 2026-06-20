@@ -61,23 +61,13 @@ export default function RapportsAdminPage() {
     setSyncing(true)
     setSyncMsg('')
     try {
-      // 1. Récupérer toutes les transactions depuis le service Java
       const txRes = await api.get('/transactions/all')
       const transactions = txRes.data ?? []
-
-      // 2. Tenter de récupérer tous les prêts (optionnel)
       let loans: unknown[] = []
-      try {
-        const loansRes = await api.get('/loans')
-        loans = loansRes.data ?? []
-      } catch { /* endpoint optionnel */ }
-
-      // 3. Envoyer au service Python
+      try { const r = await api.get('/loans'); loans = r.data ?? [] } catch { /* optionnel */ }
       const result = await reporting.post('/admin/backfill', { transactions, loans })
       const { inserted_transactions, inserted_loans } = result.data
       setSyncMsg(`Synchronisation réussie : ${inserted_transactions} transactions, ${inserted_loans} prêts importés.`)
-
-      // 4. Recharger les rapports
       await fetchReports()
     } catch {
       setSyncMsg('Erreur lors de la synchronisation. Vérifiez que les services sont démarrés.')
@@ -100,7 +90,6 @@ export default function RapportsAdminPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-slate-800">Rapports globaux</h1>
@@ -111,11 +100,9 @@ export default function RapportsAdminPage() {
           disabled={syncing}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-xl hover:bg-blue-700 disabled:opacity-50 transition"
         >
-          {syncing ? (
-            <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-          ) : (
-            <span>⟳</span>
-          )}
+          {syncing
+            ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            : <span>⟳</span>}
           {syncing ? 'Synchronisation…' : 'Synchroniser les données'}
         </button>
       </div>
@@ -132,7 +119,6 @@ export default function RapportsAdminPage() {
         <Card title="Rapports"><p className="text-slate-400 text-sm text-center py-6">{error}</p></Card>
       ) : (
         <>
-          {/* KPI Transactions */}
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: 'Volume total', value: `${(txReport?.totalVolume ?? 0).toLocaleString('fr-FR')} FCFA`, color: 'text-blue-600' },
@@ -146,7 +132,6 @@ export default function RapportsAdminPage() {
             ))}
           </div>
 
-          {/* Graphiques */}
           {typeChartData.length > 0 && (
             <div className="grid grid-cols-2 gap-4">
               <Card title="Transactions par type (nombre)">
@@ -164,7 +149,6 @@ export default function RapportsAdminPage() {
             </Card>
           )}
 
-          {/* KPI Prêts */}
           {loanReport && !loanReport.message ? (
             <Card title="Prêts approuvés">
               <div className="grid grid-cols-2 gap-4">

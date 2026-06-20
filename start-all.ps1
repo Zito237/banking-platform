@@ -177,6 +177,21 @@ if ($reportExisting) {
     Write-Host "[OK] reporting-service demarre sur :$reportPort" -ForegroundColor Green
 }
 
+# 13. OCR Service (Python / FastAPI) — port 9001
+$ocrPort = 9001
+$ocrExisting = netstat -ano | Select-String ":$ocrPort " | Where-Object { $_ -match "LISTENING" }
+if ($ocrExisting) {
+    Write-Host "[SKIP] ocr-service deja actif sur :$ocrPort" -ForegroundColor Yellow
+} else {
+    Start-Process -FilePath "python" `
+        -ArgumentList "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9001" `
+        -WorkingDirectory (Join-Path $ROOT 'services-python\service-document+ocr+ia') `
+        -RedirectStandardOutput (Join-Path $LOG_DIR 'ocr-service.log') `
+        -RedirectStandardError  (Join-Path $LOG_DIR 'ocr-service-err.log') `
+        -WindowStyle Hidden
+    Write-Host "[OK] ocr-service demarre sur :$ocrPort" -ForegroundColor Green
+}
+
 Write-Host "`nTous les services ont ete lances." -ForegroundColor Cyan
 Write-Host "Attends ~60 secondes que tous soient prets, puis ouvre http://localhost:5173" -ForegroundColor White
 Write-Host "Logs disponibles dans : $LOG_DIR" -ForegroundColor Gray

@@ -20,6 +20,7 @@ import com.banking_platform.customer_service.dto.CustomerResponse;
 import com.banking_platform.customer_service.dto.CustomerRequest;
 import com.banking_platform.customer_service.dto.CustomerUpdateRequest;
 import com.banking_platform.customer_service.dto.NotificationResponse;
+import com.banking_platform.customer_service.dto.OcrResultRequest;
 import com.banking_platform.customer_service.service.CustomerService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -90,6 +91,38 @@ public class CustomerController {
             @Valid @RequestBody DocumentRequest request) {
         DocumentResponse response = customerService.submitDocument(request);
         return ResponseEntity.ok(response);
+    }
+
+    /**
+     * GET /documents
+     * Retourne tous les documents (tous clients) — vue admin KYC.
+     */
+    @GetMapping("/documents")
+    public ResponseEntity<List<DocumentResponse>> getAllDocuments() {
+        return ResponseEntity.ok(customerService.getAllDocuments());
+    }
+
+    /**
+     * PATCH /documents/{id}/verify
+     * Valide manuellement un document (admin) et passe le KYC du client a VERIFIED.
+     */
+    @PatchMapping("/documents/{id}/verify")
+    public ResponseEntity<Void> verifyDocument(@PathVariable UUID id) {
+        customerService.verifyDocument(id);
+        return ResponseEntity.ok().build();
+    }
+
+    /**
+     * POST /documents/{id}/process
+     * Applique directement le resultat OCR sur un document (appele par le frontend
+     * apres upload direct vers le service OCR, sans passer par RabbitMQ).
+     */
+    @PostMapping("/documents/{id}/process")
+    public ResponseEntity<Void> processOcrResult(
+            @PathVariable UUID id,
+            @RequestBody OcrResultRequest request) {
+        customerService.applyOcrResult(id, request.getConfidence());
+        return ResponseEntity.ok().build();
     }
 
     /**

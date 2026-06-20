@@ -54,6 +54,15 @@ app = FastAPI(
     version="1.0.0",
 )
 
+# CORS — permet les appels directs depuis le frontend React (port 5173)
+from fastapi.middleware.cors import CORSMiddleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # Inclusion des routes
 app.include_router(router, prefix="/api")
 

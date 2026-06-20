@@ -37,7 +37,6 @@ export default function RapportsPage() {
   const [loadingData, setLoadingData] = useState(true)
   const [error, setError] = useState('')
 
-  // Période
   const now = new Date()
   const [fromDate, setFromDate] = useState(
     new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
@@ -50,7 +49,6 @@ export default function RapportsPage() {
     try {
       const params: Record<string, string> = { from, to }
       if (opId) params.operatorId = opId
-
       const [tx, loans] = await Promise.all([
         reporting.get('/reports/transactions', { params }),
         reporting.get('/reports/loans', { params: opId ? { operatorId: opId } : {} }),
@@ -74,9 +72,7 @@ export default function RapportsPage() {
       .catch(() => fetchReports(null, fromDate, toDate))
   }, [])
 
-  function handleFilter() {
-    fetchReports(operatorId, fromDate, toDate)
-  }
+  function handleFilter() { fetchReports(operatorId, fromDate, toDate) }
 
   const typeChartData = Object.entries(txReport?.transactionsByType ?? {}).map(([type, v]) => ({
     label: type.replace('_', ' '),
@@ -92,15 +88,13 @@ export default function RapportsPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div>
         <h1 className="text-2xl font-bold text-slate-800">Rapports</h1>
         <p className="text-sm text-slate-400 mt-0.5">
-          Statistiques de votre opérateur{operatorId ? ` (ID: ${operatorId.slice(0, 8)}…)` : ''}
+          Statistiques de votre opérateur{operatorId ? ` (ID : ${operatorId.slice(0, 8)}…)` : ''}
         </p>
       </div>
 
-      {/* Filtre période */}
       <Card title="Période d'analyse">
         <div className="flex items-end gap-4">
           <div>
@@ -136,7 +130,6 @@ export default function RapportsPage() {
         <Card title="Rapports"><p className="text-slate-400 text-sm text-center py-6">{error}</p></Card>
       ) : (
         <>
-          {/* KPI Transactions */}
           <div className="grid grid-cols-3 gap-4">
             {[
               { label: 'Volume total', value: `${(txReport?.totalVolume ?? 0).toLocaleString('fr-FR')} FCFA`, color: 'text-blue-600' },
@@ -150,7 +143,6 @@ export default function RapportsPage() {
             ))}
           </div>
 
-          {/* Graphiques */}
           {typeChartData.length > 0 ? (
             <div className="grid grid-cols-2 gap-4">
               <Card title="Transactions par type (nombre)">
@@ -168,7 +160,6 @@ export default function RapportsPage() {
             </Card>
           )}
 
-          {/* KPI Prêts */}
           {loanReport && !loanReport.message ? (
             <Card title="Prêts approuvés">
               <div className="grid grid-cols-2 gap-4">

@@ -120,24 +120,26 @@ public class TransactionService {
     }
 
     public TransactionResponse repayment(RepaymentRequest req) {
+        String ref = req.reference() != null ? req.reference() : "REPAY-" + UUID.randomUUID();
+
+        // If a prior FAILED attempt exists for this reference, remove it (no debit was made)
+        repo.findByReference(ref).ifPresent(existing -> {
+            if (existing.getStatus() == TransactionStatus.FAILED) {
+                repo.delete(existing);
+            }
+        });
+
         Transaction tx = new Transaction();
-        tx.setReference(req.reference() != null ? req.reference() : "REPAY-" + UUID.randomUUID());
+        tx.setReference(ref);
         tx.setType(TransactionType.REPAYMENT);
         tx.setAmount(req.amount());
         tx.setSourceAccountId(req.accountId());
-        repo.save(tx);
 
-        try {
-            accountClient.debit(req.accountId(), Map.of("amount", req.amount()));
-            tx.setStatus(TransactionStatus.COMPLETED);
-            repo.save(tx);
-            publishCompleted(tx);
-        } catch (Exception e) {
-            tx.setStatus(TransactionStatus.FAILED);
-            repo.save(tx);
-            publishFailed(tx, e.getMessage());
-            throw e;
-        }
+        // Attempt debit first — only persist the transaction if it succeeds
+        accountClient.debit(req.accountId(), Map.of("amount", req.amount()));
+        tx.setStatus(TransactionStatus.COMPLETED);
+        repo.save(tx);
+        publishCompleted(tx);
         return toResponse(tx);
     }
 

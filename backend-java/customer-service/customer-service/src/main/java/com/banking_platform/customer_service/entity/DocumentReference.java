@@ -37,8 +37,8 @@ public class DocumentReference {
     @Column(nullable = false)
     private com.banking_platform.customer_service.entity.DocumentType documentType;  // Type de document (CNI, passeport...)
 
-    @Column(nullable = false)
-    private String fileUrl;  // URL du fichier stocke (ex: /uploads/cni_123.pdf)
+    @Column(nullable = false, length = 2048)
+    private String fileUrl;  // URL ou nom du fichier stocke
 
     @Column(nullable = false)
     private boolean verified = false;  // false par defaut, passe a true apres OCR

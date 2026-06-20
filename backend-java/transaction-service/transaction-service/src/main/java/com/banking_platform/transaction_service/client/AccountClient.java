@@ -24,10 +24,12 @@ public interface AccountClient {
     Object debit(@PathVariable UUID id, @RequestBody Map<String, BigDecimal> body);
 
     default Object creditFallback(UUID id, Map<String, BigDecimal> body, Throwable t) {
-        throw new RuntimeException("account-service credit unavailable: " + t.getMessage());
+        if (t instanceof RuntimeException re) throw re;
+        throw new RuntimeException(t.getMessage());
     }
 
     default Object debitFallback(UUID id, Map<String, BigDecimal> body, Throwable t) {
-        throw new RuntimeException("account-service debit unavailable: " + t.getMessage());
+        if (t instanceof RuntimeException re) throw re;
+        throw new RuntimeException(t.getMessage());
     }
 }

@@ -27,6 +27,7 @@ import com.banking_platform.customer_service.messaging.DocumentSubmittedEvent;
 import com.banking_platform.customer_service.dto.DocumentResponse;
 import com.banking_platform.customer_service.dto.DocumentRequest;
 import com.banking_platform.customer_service.dto.NotificationResponse;
+import com.banking_platform.customer_service.dto.OcrResultRequest;
 import com.banking_platform.customer_service.config.RabbitMQConfig;
 import com.banking_platform.customer_service.repository.CustomerRepository;
 import com.banking_platform.customer_service.repository.DocumentRepository;
@@ -180,6 +181,28 @@ public class CustomerService {
     }
 
     /**
+     * Applique directement le resultat OCR sur un document (sans passer par RabbitMQ).
+     * Met a jour verified=true et le KYC du client selon le score de confiance.
+     */
+    @Transactional
+    public void applyOcrResult(UUID documentId, float confidence) {
+        DocumentReference document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document non trouve : " + documentId));
+
+        document.setVerified(true);
+        documentRepository.save(document);
+
+        Customer customer = customerRepository.findById(document.getCustomer().getId())
+                .orElseThrow(() -> new RuntimeException("Client non trouve"));
+
+        KycStatus newStatus = (confidence >= 0.7f) ? KycStatus.VERIFIED : KycStatus.REJECTED;
+        customer.setKycStatus(newStatus);
+        customerRepository.save(customer);
+
+        logger.info("OCR applique au document {} : confidence={}, kycStatus={}", documentId, confidence, newStatus);
+    }
+
+    /**
      * Liste les notifications d'un client (plus recentes en premier).
      */
     public List<NotificationResponse> getNotifications(UUID customerId) {
@@ -226,7 +249,35 @@ public class CustomerService {
     }
 
     /**
+     * Retourne tous les documents (tous clients) — pour la vue admin KYC.
+     */
+    public List<DocumentResponse> getAllDocuments() {
+        return documentRepository.findAll().stream()
+                .map(this::mapToDocumentResponse)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Valide manuellement un document (admin) et passe le KYC du client a VERIFIED.
+     */
+    @Transactional
+    public void verifyDocument(UUID documentId) {
+        DocumentReference document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new RuntimeException("Document non trouve : " + documentId));
+        document.setVerified(true);
+        documentRepository.save(document);
+
+        Customer customer = customerRepository.findById(document.getCustomer().getId())
+                .orElseThrow(() -> new RuntimeException("Client non trouve"));
+        customer.setKycStatus(KycStatus.VERIFIED);
+        customerRepository.save(customer);
+
+        logger.info("Document {} valide manuellement par admin, KYC client {} = VERIFIED", documentId, customer.getId());
+    }
+
+    /**
      * Convertit une entite DocumentReference en DTO DocumentResponse.
+     * Inclut customerId et customerName pour la vue admin.
      */
     private DocumentResponse mapToDocumentResponse(DocumentReference document) {
         DocumentResponse response = new DocumentResponse();
@@ -234,6 +285,10 @@ public class CustomerService {
         response.setDocumentType(document.getDocumentType().name());
         response.setFileUrl(document.getFileUrl());
         response.setVerified(document.isVerified());
+        if (document.getCustomer() != null) {
+            response.setCustomerId(document.getCustomer().getId());
+            response.setCustomerName(document.getCustomer().getFirstName() + " " + document.getCustomer().getLastName());
+        }
         return response;
     }
 }
