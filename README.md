@@ -109,7 +109,7 @@ Pour l’analyse DDD et l’architecture :
 
 ```bash
 # 1) Cloner le dépôt
-git clone https://github.com/univ-yaounde/banking-platform.git
+git clone https://github.com/Remise-Tp-INF462-2026/INF462-Groupe1-Sophia-Bertrand-Lea-Princesse-Soufayanou
 cd banking-platform
 
 # 2) Construire les images (si nécessaire)
