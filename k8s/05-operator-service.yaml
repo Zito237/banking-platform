@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: operator-service
+  template:
+    metadata:
+      labels:
+        app: operator-service
+    spec:
+      containers:
+        - name: operator-service
+          image: finpay/operator-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-server:8888"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://discovery-server:8761/eureka/"
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: "operator-service"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:h2:file:/data/operator/operatordb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "op"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_RABBITMQ_HOST
+              value: "rabbitmq"
+          volumeMounts:
+            - name: operator-data
+              mountPath: /data/operator
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      volumes:
+        - name: operator-data
+          persistentVolumeClaim:
+            claimName: operator-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operator-service
+  namespace: finpay
+spec:
+  selector:
+    app: operator-service
+  ports:
+    - port: 8082
+      targetPort: 8082
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: operator-pvc
+  namespace: finpay
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi

@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporting-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reporting-service
+  template:
+    metadata:
+      labels:
+        app: reporting-service
+    spec:
+      containers:
+        - name: reporting-service
+          image: finpay/reporting-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9004
+          env:
+            - name: RABBITMQ_HOST
+              value: "rabbitmq"
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: "guest"
+            - name: RABBITMQ_PASS
+              value: "guest"
+            - name: RABBITMQ_EXCHANGE
+              value: "banking.events"
+            - name: DATABASE_PATH
+              value: "/data/reporting.db"
+          volumeMounts:
+            - name: reporting-data
+              mountPath: /data
+      volumes:
+        - name: reporting-data
+          persistentVolumeClaim:
+            claimName: reporting-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporting-service
+  namespace: finpay
+spec:
+  selector:
+    app: reporting-service
+  ports:
+    - port: 9004
+      targetPort: 9004
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: reporting-pvc
+  namespace: finpay
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi

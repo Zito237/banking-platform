@@ -1,0 +1,416 @@
+version: '3.8'
+
+# =============================================================================
+# FinPay — Docker Compose complet
+# Lance l'intégralité de la plateforme bancaire en conteneurs.
+#
+# Usage :
+#   docker compose up --build        # Premier lancement (compile les images)
+#   docker compose up -d             # Lancement en arrière-plan
+#   docker compose down -v           # Arrêt + suppression des volumes
+#   docker compose logs -f <service> # Voir les logs d'un service
+# =============================================================================
+
+networks:
+  finpay-network:
+    driver: bridge
+
+volumes:
+  rabbitmq-data:
+  data-auth:
+  data-operator:
+  data-account:
+  data-customer:
+  data-transaction:
+  data-loan:
+  data-audit:
+  data-reporting:
+
+services:
+
+  # ===========================================================================
+  # 1. RabbitMQ — Bus de messages asynchrones
+  # ===========================================================================
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"   # Console web : http://localhost:15672 (guest/guest)
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 2. Discovery Server (Eureka) — Annuaire des services
+  # ===========================================================================
+  discovery-server:
+    build:
+      context: ./backend-java/discovery-server/discovery-server
+    container_name: discovery-server
+    ports:
+      - "8761:8761"
+    networks:
+      - finpay-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ===========================================================================
+  # 3. Config Server — Configuration centralisée
+  # ===========================================================================
+  config-server:
+    build:
+      context: ./backend-java/config-server/config-server
+    container_name: config-server
+    ports:
+      - "8888:8888"
+    environment:
+      SPRING_PROFILES_ACTIVE: native
+      SPRING_CLOUD_CONFIG_SERVER_NATIVE_SEARCH_LOCATIONS: file:///config-repo
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: config-server
+    volumes:
+      - ./config-repo:/config-repo:ro
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8888/actuator/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 40s
+
+  # ===========================================================================
+  # 4. Auth Service — Authentification & JWT
+  # ===========================================================================
+  auth-service:
+    build:
+      context: ./backend-java/auth-service/auth-service
+    container_name: auth-service
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: auth-service
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/auth/authdb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: au
+      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+    volumes:
+      - data-auth:/data/auth
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 5. Operator Service — Gestion des opérateurs bancaires
+  # ===========================================================================
+  operator-service:
+    build:
+      context: ./backend-java/operator-service/operator-service
+    container_name: operator-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: operator-service
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/operator/operatordb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: op
+      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+    volumes:
+      - data-operator:/data/operator
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 6. Account Service — Comptes bancaires
+  # ===========================================================================
+  account-service:
+    build:
+      context: ./backend-java/account-service/account-service
+    container_name: account-service
+    ports:
+      - "8083:8083"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: account-service
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/account/accountdb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: ac
+      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+    volumes:
+      - data-account:/data/account
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 7. Customer Service — Profils clients & KYC
+  # ===========================================================================
+  customer-service:
+    build:
+      context: ./backend-java/customer-service/customer-service
+    container_name: customer-service
+    ports:
+      - "8084:8084"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: customer-service
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/customer/customerdb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: cu
+      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+    volumes:
+      - data-customer:/data/customer
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 8. Transaction Service — Opérations financières
+  # ===========================================================================
+  transaction-service:
+    build:
+      context: ./backend-java/transaction-service/transaction-service
+    container_name: transaction-service
+    ports:
+      - "8085:8085"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: transaction-service
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/transaction/transactiondb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: tr
+      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+    volumes:
+      - data-transaction:/data/transaction
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 9. Loan Service — Prêts et remboursements
+  # ===========================================================================
+  loan-service:
+    build:
+      context: ./backend-java/loan-service/loan-service
+    container_name: loan-service
+    ports:
+      - "8086:8086"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: loan-service
+      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/loan/loandb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+      SPRING_DATASOURCE_USERNAME: lo
+      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_RABBITMQ_HOST: rabbitmq
+    volumes:
+      - data-loan:/data/loan
+    depends_on:
+      config-server:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 10. API Gateway — Point d'entrée unique
+  # ===========================================================================
+  api-gateway:
+    build:
+      context: ./backend-java/api-gateway/api-gateway
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      EUREKA_INSTANCE_HOSTNAME: api-gateway
+      SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_CLOUD_GATEWAY_GLOBALCORS_CORS_CONFIGURATIONS_/**_ALLOWEDORIGINS: "http://localhost,http://frontend"
+    depends_on:
+      - auth-service
+      - account-service
+      - customer-service
+      - transaction-service
+      - loan-service
+      - operator-service
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 11. Notification Service — NestJS
+  # ===========================================================================
+  notification-service:
+    build:
+      context: ./services-node/notification-service
+    container_name: notification-service
+    ports:
+      - "9002:9002"
+    environment:
+      PORT: 9002
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_EXCHANGE: banking.events
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 12. Audit Service — NestJS (journal d'audit)
+  # ===========================================================================
+  audit-service:
+    build:
+      context: ./services-node/audit-service
+    container_name: audit-service
+    ports:
+      - "9003:9003"
+    environment:
+      PORT: 9003
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_EXCHANGE: banking.events
+      DATA_DIR: /data/audit
+    volumes:
+      - data-audit:/data/audit
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 13. Reporting Service — Python FastAPI
+  # ===========================================================================
+  reporting-service:
+    build:
+      context: ./services-python/service_reporting
+    container_name: reporting-service
+    ports:
+      - "9004:9004"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_EXCHANGE: banking.events
+      DATABASE_PATH: /data/reporting.db
+    volumes:
+      - data-reporting:/data
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 14. OCR Service — Python FastAPI + Tesseract
+  # ===========================================================================
+  ocr-service:
+    build:
+      context: ./services-python/service-document+ocr+ia
+    container_name: ocr-service
+    ports:
+      - "9001:9001"
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USER: guest
+      RABBITMQ_PASS: guest
+      RABBITMQ_EXCHANGE: banking.events
+      TESSERACT_CMD: /usr/bin/tesseract
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # 15. Frontend — React (servi par nginx)
+  # ===========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:8080
+        VITE_REPORTING_URL: http://localhost:9004/api
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api-gateway
+    networks:
+      - finpay-network
+    restart: unless-stopped

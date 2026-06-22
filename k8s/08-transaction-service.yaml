@@ -1,0 +1,76 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transaction-service
+  template:
+    metadata:
+      labels:
+        app: transaction-service
+    spec:
+      containers:
+        - name: transaction-service
+          image: finpay/transaction-service:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8085
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: "optional:configserver:http://config-server:8888"
+            - name: EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+              value: "http://discovery-server:8761/eureka/"
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: "transaction-service"
+            - name: SPRING_DATASOURCE_URL
+              value: "jdbc:h2:file:/data/transaction/transactiondb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1"
+            - name: SPRING_DATASOURCE_USERNAME
+              value: "tr"
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: ""
+            - name: SPRING_JPA_HIBERNATE_DDL_AUTO
+              value: "update"
+            - name: SPRING_RABBITMQ_HOST
+              value: "rabbitmq"
+          volumeMounts:
+            - name: transaction-data
+              mountPath: /data/transaction
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8085
+            initialDelaySeconds: 60
+            periodSeconds: 10
+      volumes:
+        - name: transaction-data
+          persistentVolumeClaim:
+            claimName: transaction-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-service
+  namespace: finpay
+spec:
+  selector:
+    app: transaction-service
+  ports:
+    - port: 8085
+      targetPort: 8085
+  type: ClusterIP
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: transaction-pvc
+  namespace: finpay
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 500Mi
