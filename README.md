@@ -172,66 +172,44 @@ docker-compose down
 docker-compose down -v
 Kubernetes
 bash
-# 1. Cloner le dépôt
-git clone https://github.com/univ-yaounde/banking-platform.git
+# Note (projet actuel)
+# Le dossier k8s contient déjà tous les manifests (00-15) directement dans k8s/.
+# Ces manifests déploient : RabbitMQ, discovery-server (8761), config-server (8888),
+# api-gateway (8080), microservices et frontend.
+
+# 1) Aller dans le projet (si besoin)
 cd banking-platform
 
-# 2. Créer le namespace
-kubectl apply -f k8s/00-namespace/
+# 2) Déployer tout le cluster (ordre géré par les fichiers 00-15)
+kubectl apply -f k8s/
 
-# 3. Déployer l'infrastructure (RabbitMQ + PostgreSQL)
-kubectl apply -f k8s/01-infra/
+# 3) Vérifier le statut
+kubectl get pods -n finpay
+kubectl get svc -n finpay
+kubectl get ingress -n finpay
 
-# 4. Déployer la configuration
-kubectl apply -f k8s/02-config/
-kubectl apply -f k8s/03-secrets/
+# 4) Accéder au frontend et à l'API gateway (selon ton Ingress controller)
+# Host attendu : finpay.local
+# Ajoute finpay.local dans ton /etc/hosts ou équivalent (Windows: C:\Windows\System32\drivers\etc\hosts)
+# Exemple:
+# 127.0.0.1 finpay.local
+# - Frontend    → http://finpay.local/
+# - API Gateway → http://finpay.local/api
 
-# 5. Déployer les services d'infrastructure
-kubectl apply -f k8s/04-config-server/
-kubectl apply -f k8s/05-discovery-server/
+# 5) Supprimer tout le déploiement
+kubectl delete namespace finpay
 
-# 6. Déployer la gateway (replicas=2)
-kubectl apply -f k8s/06-api-gateway/
+# Dépannage rapide (très fréquent)
+# A) ImagePullBackOff / ErrImagePull
+#    -> Cela arrive si les images Docker "finpay/<service>:latest" ne sont pas disponibles
+#       sur le registre utilisé par ton cluster (ou pas de droits).
+#    -> Solution : construire/pousser les images vers le registre accessible par Kubernetes,
+#       ou mettre à jour les manifests avec les bons tags et imagePullSecrets.
+# B) Pods en ContainerCreating
+#    -> Attendre que le PV/PVC soit provisionné (ou corriger le StorageClass).
+# C) Pods RabbitMQ Running mais services Java en échec
+#    -> Souvent lié à config/discovery/config-server (connectivité DNS/ports) ou images indisponibles.
 
-# 7. Déployer les services métier Java
-kubectl apply -f k8s/07-auth-service/
-kubectl apply -f k8s/08-operator-service/
-kubectl apply -f k8s/09-account-service/    # replicas=2
-kubectl apply -f k8s/10-customer-service/
-kubectl apply -f k8s/11-transaction-service/
-kubectl apply -f k8s/12-loan-service/
-
-# 8. Déployer les services polyglottes
-kubectl apply -f k8s/13-document-ocr/
-kubectl apply -f k8s/14-reporting/
-kubectl apply -f k8s/15-notification/
-kubectl apply -f k8s/16-audit/
-
-# 9. Déployer le frontend
-kubectl apply -f k8s/17-frontend/
-
-# 10. Déployer l'Ingress
-kubectl apply -f k8s/18-ingress/
-
-# 11. Vérifier le statut
-echo "=== Pods ==="
-kubectl get pods -n banking-platform
-
-echo "=== Services ==="
-kubectl get svc -n banking-platform
-
-echo "=== Ingress ==="
-kubectl get ingress -n banking-platform
-
-# 12. Accéder aux services (ajouter banking.local dans /etc/hosts)
-# 127.0.0.1 banking.local
-# - Frontend               → http://banking.local/
-# - API Gateway            → http://banking.local/api
-# - Eureka Dashboard       → http://banking.local/eureka
-# - RabbitMQ Management UI → http://banking.local/rabbitmq
-
-# 13. Supprimer tout le déploiement
-kubectl delete namespace banking-platform
 Ordre de démarrage
 L'ordre est critique car les services métier dépendent de l'infrastructure :
 plain
