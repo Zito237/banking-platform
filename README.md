@@ -25,14 +25,15 @@ Licence
 Vue d'ensemble
 Cette plateforme est une architecture microservices polyglotte conçue selon les principes du Domain-Driven Design (DDD). Elle permet à plusieurs opérateurs financiers (banques traditionnelles, microfinances, opérateurs de téléphonie mobile) de coexister dans un même écosystème numérique, tout en offrant à l'utilisateur final une expérience homogène, sécurisée et transparente.
 Fonctionnalités principales
-🔐 Authentification multi-mécanismes (JWT, rôles CLIENT/OPERATOR/ADMIN)
-👤 Gestion des clients et KYC avec validation documentaire OCR/IA
-💳 Gestion des comptes financiers (courant, épargne, portefeuille mobile)
-💸 Dépôts, retraits et transferts (intra & inter-opérateurs)
-📊 Demandes de prêts, échéanciers et remboursements
-📧 Notifications email/SMS (simulées)
-📈 Rapports et statistiques par opérateur
-🔍 Audit et traçabilité complète des opérations
+- 🔐 Authentification multi-mécanismes (JWT, rôles CLIENT/OPERATOR/ADMIN)
+- 👤 Gestion des clients et KYC avec validation documentaire OCR/IA
+- 💳 Gestion des comptes financiers (courant, épargne, portefeuille mobile)
+- 💸 Dépôts, retraits et transferts (intra & inter-opérateurs)
+- 📊 Demandes de prêts, échéanciers et remboursements
+- 📧 Notifications email/SMS (simulées)
+- 📈 Rapports et statistiques par opérateur
+- 🔍 Audit et traçabilité complète des opérations
+
 Architecture
 plain
                           ┌────────────────────┐
