@@ -1,5 +1,3 @@
-version: '3.8'
-
 # =============================================================================
 # FinPay — Docker Compose complet
 # Lance l'intégralité de la plateforme bancaire en conteneurs.
