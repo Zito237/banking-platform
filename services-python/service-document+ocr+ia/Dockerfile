@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir --timeout=120 -r requirements.txt
 COPY . .
 EXPOSE 9001
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "9001"]

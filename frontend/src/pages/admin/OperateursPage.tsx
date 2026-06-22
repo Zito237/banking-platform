@@ -1,5 +1,6 @@
 import { useEffect, useState, FormEvent } from 'react'
 import api from '../../api/axios'
+import { parseError } from '../../api/parseError'
 import Card from '../../components/Card'
 
 interface BusinessRule { id: string; ruleType: string; value: string }
