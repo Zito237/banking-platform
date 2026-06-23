@@ -21,6 +21,7 @@ spec:
       containers:
         - name: notification-service
           image: finpay/notification-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9002
           env:
@@ -73,6 +74,7 @@ spec:
       containers:
         - name: audit-service
           image: finpay/audit-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9003
           env:
@@ -133,6 +135,7 @@ spec:
       containers:
         - name: reporting-service
           image: finpay/reporting-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9004
           env:
@@ -197,6 +200,7 @@ spec:
       containers:
         - name: ocr-service
           image: finpay/ocr-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 9001
           env:

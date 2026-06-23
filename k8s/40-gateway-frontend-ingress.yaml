@@ -21,6 +21,7 @@ spec:
       containers:
         - name: api-gateway
           image: finpay/api-gateway:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8080
           envFrom:
@@ -76,6 +77,7 @@ spec:
       containers:
         - name: frontend
           image: finpay/frontend:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 80
           readinessProbe:
