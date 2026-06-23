@@ -79,3 +79,6 @@ docker run -p 9001:9001 -e RABBITMQ_HOST=rabbitmq document-ocr-service
 ```bash
 docker-compose up --build
 ```
+## manually 
+ python -m uvicorn main:app --port 9001 --reload  for ocr
+  python -m uvicorn main:app --port 9004 --reload for reporting
