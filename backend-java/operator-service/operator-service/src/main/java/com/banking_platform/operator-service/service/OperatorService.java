@@ -155,6 +155,13 @@ public class OperatorService {
         return response;
     }
 
+    public java.math.BigDecimal getCeiling(UUID operatorId) {
+        return businessRuleRepository
+                .findByOperatorIdAndRuleType(operatorId, RuleType.CEILING)
+                .map(rule -> new java.math.BigDecimal(rule.getValue().replace(" ", "")))
+                .orElse(null);
+    }
+
     /**
      * Convertit une entite Operator en DTO OperatorResponse.
      */

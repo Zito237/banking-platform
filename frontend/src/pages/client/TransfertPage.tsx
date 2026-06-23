@@ -15,6 +15,16 @@ interface TxResult {
   destinationAccountId: string
 }
 
+interface AccountDetail {
+  id: string
+  accountNumber: string
+  accountType: string
+  currency: string
+  operatorId: string
+  balance: number
+  status: string
+}
+
 export default function TransfertPage() {
   const { options, refresh } = useMyAccounts()
 
@@ -27,7 +37,18 @@ export default function TransfertPage() {
   const [lookingUp, setLookingUp] = useState(false)
   const [result, setResult] = useState<TxResult | null>(null)
   const [error, setError] = useState('')
-  const [destInfo, setDestInfo] = useState<{ accountNumber: string; accountType: string; currency: string } | null>(null)
+  const [destInfo, setDestInfo] = useState<{ accountNumber: string; accountType: string; currency: string; operatorId?: string } | null>(null)
+  const [allAccounts, setAllAccounts] = useState<AccountDetail[]>([])
+
+  // Charger les détails des comptes (avec operatorId)
+  useEffect(() => {
+    api.get('/auth/me').then(({ data }) => {
+      if (data.linkedCustomerId) {
+        api.get('/accounts', { params: { customerId: data.linkedCustomerId } })
+          .then((r) => setAllAccounts(r.data))
+      }
+    }).catch(() => {})
+  }, [])
 
   // Auto-sélectionne le 1er compte dès le chargement
   useEffect(() => {
@@ -41,7 +62,7 @@ export default function TransfertPage() {
       setLookingUp(true)
       try {
         const { data } = await api.get(`/accounts/by-number/${destNumber.trim()}`)
-        setDestInfo({ accountNumber: data.accountNumber, accountType: data.accountType, currency: data.currency })
+        setDestInfo({ accountNumber: data.accountNumber, accountType: data.accountType, currency: data.currency, operatorId: data.operatorId })
         setError('')
       } catch {
         setDestInfo(null)
@@ -58,6 +79,7 @@ export default function TransfertPage() {
     setLoading(true)
     try {
       let destinationAccountId: string
+      const sourceAccount = allAccounts.find((a) => a.id === sourceId)
 
       if (mode === 'intra') {
         destinationAccountId = destId
@@ -65,10 +87,18 @@ export default function TransfertPage() {
           setError('Le compte source et le compte destinataire doivent être différents.')
           return
         }
+        const destAccount = allAccounts.find((a) => a.id === destId)
+        if (sourceAccount && destAccount && sourceAccount.operatorId !== destAccount.operatorId) {
+          setError('Transfert intra-opérateur : les deux comptes doivent appartenir au même opérateur. Utilisez le mode inter-opérateurs.')
+          return
+        }
       } else {
-        // Résolution numéro → UUID
         const { data: acct } = await api.get(`/accounts/by-number/${destNumber.trim()}`)
         destinationAccountId = acct.id
+        if (sourceAccount && acct.operatorId === sourceAccount.operatorId) {
+          setError('Transfert inter-opérateurs : les deux comptes doivent appartenir à des opérateurs différents. Utilisez le mode intra-opérateur.')
+          return
+        }
       }
 
       const { data } = await api.post('/transfers', {
@@ -98,7 +128,15 @@ export default function TransfertPage() {
     }
   }
 
-  const destOptions = options.filter((o) => o.value !== sourceId)
+  const sourceAccount = allAccounts.find((a) => a.id === sourceId)
+  const destOptions = options.filter((o) => {
+    if (o.value === sourceId) return false
+    if (mode === 'intra' && sourceAccount) {
+      const destAcct = allAccounts.find((a) => a.id === o.value)
+      return destAcct?.operatorId === sourceAccount.operatorId
+    }
+    return true
+  })
 
   if (result) {
     const statusLabel: Record<string, string> = {

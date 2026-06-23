@@ -189,17 +189,23 @@ public class CustomerService {
         DocumentReference document = documentRepository.findById(documentId)
                 .orElseThrow(() -> new RuntimeException("Document non trouve : " + documentId));
 
-        document.setVerified(true);
-        documentRepository.save(document);
+        document.setOcrConfidence(confidence);
 
-        Customer customer = customerRepository.findById(document.getCustomer().getId())
-                .orElseThrow(() -> new RuntimeException("Client non trouve"));
+        if (confidence >= 0.7f) {
+            document.setVerified(true);
+            documentRepository.save(document);
 
-        KycStatus newStatus = (confidence >= 0.7f) ? KycStatus.VERIFIED : KycStatus.REJECTED;
-        customer.setKycStatus(newStatus);
-        customerRepository.save(customer);
+            Customer customer = customerRepository.findById(document.getCustomer().getId())
+                    .orElseThrow(() -> new RuntimeException("Client non trouve"));
+            customer.setKycStatus(KycStatus.VERIFIED);
+            customerRepository.save(customer);
 
-        logger.info("OCR applique au document {} : confidence={}, kycStatus={}", documentId, confidence, newStatus);
+            logger.info("Document {} auto-valide : confidence={}, kycStatus=VERIFIED", documentId, confidence);
+        } else {
+            document.setVerified(false);
+            documentRepository.save(document);
+            logger.info("Document {} en attente de revue admin : confidence={}", documentId, confidence);
+        }
     }
 
     /**
@@ -285,6 +291,7 @@ public class CustomerService {
         response.setDocumentType(document.getDocumentType().name());
         response.setFileUrl(document.getFileUrl());
         response.setVerified(document.isVerified());
+        response.setOcrConfidence(document.getOcrConfidence());
         if (document.getCustomer() != null) {
             response.setCustomerId(document.getCustomer().getId());
             response.setCustomerName(document.getCustomer().getFirstName() + " " + document.getCustomer().getLastName());

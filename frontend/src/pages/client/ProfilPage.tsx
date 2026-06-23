@@ -25,6 +25,7 @@ interface Account {
   accountType: string
   balance: number
   currency: string
+  operatorId: string
 }
 
 const ACCOUNT_TYPES = ['CURRENT', 'SAVINGS', 'WALLET']
@@ -56,7 +57,7 @@ export default function ProfilPage() {
   // Formulaire de création de profil
   const [createForm, setCreateForm] = useState({
     firstName: '', lastName: '', dateOfBirth: '', email: '', phone: '',
-    address: '', nationalIdNumber: '', operatorId: '',
+    address: '', nationalIdNumber: '',
   })
 
   // Formulaire de modification du profil
@@ -142,7 +143,7 @@ export default function ProfilPage() {
     try {
       await api.post('/accounts', {
         customerId: customer.id,
-        operatorId: accountOperatorId || customer.operatorId,
+        operatorId: accountOperatorId,
         accountType,
         currency,
       })
@@ -180,18 +181,6 @@ export default function ProfilPage() {
               />
             </div>
           ))}
-          <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Opérateur</label>
-            <select
-              required
-              value={createForm.operatorId}
-              onChange={(e) => setCreateForm({ ...createForm, operatorId: e.target.value })}
-              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Sélectionner un opérateur...</option>
-              {operators.map((o) => <option key={o.id} value={o.id}>{o.name} ({o.code})</option>)}
-            </select>
-          </div>
           {msg && <p className="text-green-600 text-sm">{msg}</p>}
           {error && <p className="text-red-500 text-sm">{error}</p>}
           <button type="submit" className="w-full bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 transition">
@@ -201,8 +190,6 @@ export default function ProfilPage() {
       </Card>
     )
   }
-
-  const operatorName = operators.find((o) => o.id === customer?.operatorId)?.name ?? customer?.operatorId
 
   return (
     <div className="space-y-6">
@@ -237,10 +224,6 @@ export default function ProfilPage() {
               <div>
                 <p className="text-slate-400 text-xs mb-0.5">Numéro d'identité</p>
                 <p className="font-medium text-slate-800 font-mono">{customer.nationalIdNumber}</p>
-              </div>
-              <div>
-                <p className="text-slate-400 text-xs mb-0.5">Opérateur</p>
-                <p className="font-medium text-slate-800">{operatorName}</p>
               </div>
               <div>
                 <p className="text-slate-400 text-xs mb-0.5">Statut KYC</p>
@@ -324,11 +307,12 @@ export default function ProfilPage() {
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Opérateur</label>
             <select
+              required
               value={accountOperatorId}
               onChange={(e) => setAccountOperatorId(e.target.value)}
               className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">Par défaut ({operatorName})</option>
+              <option value="">Sélectionner un opérateur...</option>
               {operators.map((o) => (
                 <option key={o.id} value={o.id}>{o.name} ({o.code})</option>
               ))}
@@ -357,6 +341,7 @@ export default function ProfilPage() {
           <thead>
             <tr className="text-left text-slate-400 border-b">
               <th className="pb-2">Numéro</th>
+              <th className="pb-2">Opérateur</th>
               <th className="pb-2">Type</th>
               <th className="pb-2">Devise</th>
               <th className="pb-2 text-right">Solde</th>
@@ -366,6 +351,9 @@ export default function ProfilPage() {
             {accounts.map((a) => (
               <tr key={a.id} className="border-b last:border-0">
                 <td className="py-2 font-mono text-xs">{a.accountNumber}</td>
+                <td className="py-2 text-slate-600 text-sm font-medium">
+                  {operators.find((o) => o.id === a.operatorId)?.name ?? '—'}
+                </td>
                 <td className="py-2 text-slate-500">
                   {a.accountType === 'CURRENT' ? 'Courant'
                     : a.accountType === 'SAVINGS' ? 'Épargne'
@@ -378,7 +366,7 @@ export default function ProfilPage() {
               </tr>
             ))}
             {accounts.length === 0 && (
-              <tr><td colSpan={4} className="py-4 text-slate-400 text-center">Aucun compte ouvert.</td></tr>
+              <tr><td colSpan={5} className="py-4 text-slate-400 text-center">Aucun compte ouvert.</td></tr>
             )}
           </tbody>
         </table>

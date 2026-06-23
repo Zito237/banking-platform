@@ -8,6 +8,7 @@ public class LoanApplicationResponse {
 
     private UUID id;
     private UUID customerId;
+    private UUID operatorId;
     private BigDecimal requestedAmount;
     private String purpose;
     private String status;
@@ -20,6 +21,9 @@ public class LoanApplicationResponse {
 
     public UUID getCustomerId() { return customerId; }
     public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+
+    public UUID getOperatorId() { return operatorId; }
+    public void setOperatorId(UUID operatorId) { this.operatorId = operatorId; }
 
     public BigDecimal getRequestedAmount() { return requestedAmount; }
     public void setRequestedAmount(BigDecimal requestedAmount) { this.requestedAmount = requestedAmount; }

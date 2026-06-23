@@ -38,7 +38,6 @@ public class CustomerRequest {
     @NotBlank(message = "Le numero d'identite est obligatoire")
     private String nationalIdNumber;
 
-    @NotNull(message = "L'identifiant de l'operateur est obligatoire")
     private UUID operatorId;
 
     // Getters et Setters

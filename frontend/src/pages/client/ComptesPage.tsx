@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import api from '../../api/axios'
 import Card from '../../components/Card'
 
+interface Operator { id: string; name: string; code: string }
+
 interface Account {
   id: string
   accountNumber: string
@@ -37,6 +39,7 @@ function StatusBadge({ status }: { status: string }) {
 
 export default function ComptesPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
+  const [operators, setOperators] = useState<Operator[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -47,8 +50,10 @@ export default function ComptesPage() {
           setError("Aucun profil client n'est encore associé à votre compte.")
           return
         }
-        return api.get('/accounts', { params: { customerId: data.linkedCustomerId } })
-          .then((r) => setAccounts(r.data))
+        return Promise.all([
+          api.get('/accounts', { params: { customerId: data.linkedCustomerId } }),
+          api.get('/operators'),
+        ]).then(([a, o]) => { setAccounts(a.data); setOperators(o.data) })
       })
       .catch(() => setError('Impossible de charger vos comptes.'))
       .finally(() => setLoading(false))
@@ -71,7 +76,12 @@ export default function ComptesPage() {
               >
                 <div className="flex items-start justify-between">
                   <div>
-                    <p className="font-mono text-xs text-slate-400">{a.accountNumber}</p>
+                    <p className="font-mono text-xs text-slate-400">
+                      {a.accountNumber}
+                      <span className="ml-2 font-sans text-slate-500">
+                        — {operators.find((o) => o.id === a.operatorId)?.name ?? ''}
+                      </span>
+                    </p>
                     <p className="font-semibold text-slate-800 mt-0.5">
                       {TYPE_LABEL[a.accountType] ?? a.accountType}
                     </p>

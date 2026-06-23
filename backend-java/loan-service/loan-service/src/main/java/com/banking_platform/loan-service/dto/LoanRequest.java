@@ -20,6 +20,9 @@ public class LoanRequest {
     @NotNull(message = "L'identifiant du client est obligatoire")
     private UUID customerId;
 
+    @NotNull(message = "L'identifiant de l'opérateur est obligatoire")
+    private UUID operatorId;
+
     @NotNull(message = "Le montant demandé est obligatoire")
     @Positive(message = "Le montant doit être positif")
     private BigDecimal requestedAmount;
@@ -30,6 +33,9 @@ public class LoanRequest {
     // Getters et Setters
     public UUID getCustomerId() { return customerId; }
     public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+
+    public UUID getOperatorId() { return operatorId; }
+    public void setOperatorId(UUID operatorId) { this.operatorId = operatorId; }
 
     public BigDecimal getRequestedAmount() { return requestedAmount; }
     public void setRequestedAmount(BigDecimal requestedAmount) { this.requestedAmount = requestedAmount; }

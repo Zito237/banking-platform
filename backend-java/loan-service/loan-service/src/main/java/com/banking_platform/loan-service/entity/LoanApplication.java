@@ -25,10 +25,12 @@ public class LoanApplication {
     private UUID id;
 
     @Column(nullable = false)
-    private UUID customerId;  // Référence au client (dans customer-service)
+    private UUID customerId;
+
+    private UUID operatorId;
 
     @Column(nullable = false, precision = 19, scale = 2)
-    private BigDecimal requestedAmount;  // Montant demandé
+    private BigDecimal requestedAmount;
 
     @Column(nullable = false)
     private String purpose;  // Objet du prêt (ex: "Achat immobilier")
@@ -57,6 +59,9 @@ public class LoanApplication {
 
     public UUID getCustomerId() { return customerId; }
     public void setCustomerId(UUID customerId) { this.customerId = customerId; }
+
+    public UUID getOperatorId() { return operatorId; }
+    public void setOperatorId(UUID operatorId) { this.operatorId = operatorId; }
 
     public BigDecimal getRequestedAmount() { return requestedAmount; }
     public void setRequestedAmount(BigDecimal requestedAmount) { this.requestedAmount = requestedAmount; }

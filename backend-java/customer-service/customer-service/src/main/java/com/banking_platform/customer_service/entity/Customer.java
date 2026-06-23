@@ -48,8 +48,7 @@ public class Customer {
     @Column(nullable = false, unique = true)
     private String nationalIdNumber;  // Numero de CNI ou passeport
 
-    @Column(nullable = false)
-    private UUID operatorId;  // L'operateur auquel appartient le client
+    private UUID operatorId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)

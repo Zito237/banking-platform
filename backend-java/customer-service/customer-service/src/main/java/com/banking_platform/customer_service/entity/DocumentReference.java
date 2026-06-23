@@ -41,7 +41,9 @@ public class DocumentReference {
     private String fileUrl;  // URL ou nom du fichier stocke
 
     @Column(nullable = false)
-    private boolean verified = false;  // false par defaut, passe a true apres OCR
+    private boolean verified = false;
+
+    private Float ocrConfidence;
 
     // Constructeur vide requis par JPA
     public DocumentReference() {}
@@ -66,4 +68,7 @@ public class DocumentReference {
 
     public boolean isVerified() { return verified; }
     public void setVerified(boolean verified) { this.verified = verified; }
+
+    public Float getOcrConfidence() { return ocrConfidence; }
+    public void setOcrConfidence(Float ocrConfidence) { this.ocrConfidence = ocrConfidence; }
 }

@@ -4,9 +4,12 @@ import Card from '../../components/Card'
 import LoanScheduleTable from '../../components/LoanScheduleTable'
 import { parseError } from '../../api/parseError'
 
+interface Operator { id: string; name: string; code: string }
+
 interface LoanApplication {
   id: string
   customerId: string
+  operatorId?: string
   requestedAmount: number
   purpose: string
   status: string
@@ -38,9 +41,11 @@ const STATUS_STYLE: Record<string, { color: string; label: string }> = {
 
 export default function PretsPage() {
   const [loans, setLoans] = useState<LoanApplication[]>([])
+  const [operators, setOperators] = useState<Operator[]>([])
   const [customerId, setCustomerId] = useState<string | null>(null)
   const [amount, setAmount] = useState('')
   const [purpose, setPurpose] = useState('')
+  const [operatorId, setOperatorId] = useState('')
   const [msg, setMsg] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -60,7 +65,10 @@ export default function PretsPage() {
           return
         }
         setCustomerId(data.linkedCustomerId)
-        return fetchLoans(data.linkedCustomerId)
+        return Promise.all([
+          fetchLoans(data.linkedCustomerId),
+          api.get('/operators').then((r) => setOperators(r.data)),
+        ])
       })
       .catch(() => setError('Impossible de charger vos prêts.'))
       .finally(() => setLoading(false))
@@ -71,9 +79,9 @@ export default function PretsPage() {
     setMsg(''); setError('')
     if (!customerId) return
     try {
-      await api.post('/loans', { customerId, requestedAmount: Number(amount), purpose })
+      await api.post('/loans', { customerId, operatorId, requestedAmount: Number(amount), purpose })
       setMsg('Demande soumise avec succès.')
-      setAmount(''); setPurpose('')
+      setAmount(''); setPurpose(''); setOperatorId('')
       fetchLoans(customerId)
     } catch (err: any) {
       setError(parseError(err, 'Impossible de soumettre la demande.'))
@@ -105,6 +113,18 @@ export default function PretsPage() {
     <div className="space-y-6">
       <Card title="Demander un prêt" className="max-w-md">
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Opérateur</label>
+            <select
+              required
+              value={operatorId}
+              onChange={(e) => setOperatorId(e.target.value)}
+              className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Sélectionner un opérateur...</option>
+              {operators.map((o) => <option key={o.id} value={o.id}>{o.name} ({o.code})</option>)}
+            </select>
+          </div>
           <div>
             <label className="block text-sm font-medium text-slate-700 mb-1">Montant demandé (FCFA)</label>
             <input
@@ -157,6 +177,11 @@ export default function PretsPage() {
                         <span className="font-normal text-slate-500"> — {l.purpose}</span>
                       </p>
                       <p className="text-xs text-slate-400 mt-0.5">
+                        {l.operatorId && (
+                          <span className="text-slate-500 font-medium">
+                            {operators.find((o) => o.id === l.operatorId)?.name ?? ''} · {' '}
+                          </span>
+                        )}
                         Soumis le {new Date(l.submittedAt).toLocaleDateString('fr-FR')}
                       </p>
                     </div>

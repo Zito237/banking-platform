@@ -101,4 +101,10 @@ public class OperatorController {
         CommissionResponse response = operatorService.getCommission(id);
         return ResponseEntity.ok(response);
     }
+
+    @GetMapping("/{id}/ceiling")
+    public ResponseEntity<java.util.Map<String, java.math.BigDecimal>> getCeiling(@PathVariable UUID id) {
+        java.math.BigDecimal ceiling = operatorService.getCeiling(id);
+        return ResponseEntity.ok(java.util.Map.of("ceiling", ceiling != null ? ceiling : java.math.BigDecimal.ZERO));
+    }
 }

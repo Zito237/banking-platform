@@ -18,6 +18,7 @@ public class DocumentResponse {
     private boolean verified;
     private UUID customerId;
     private String customerName;
+    private Float ocrConfidence;
 
     // Getters et Setters
     public UUID getId() { return id; }
@@ -37,4 +38,7 @@ public class DocumentResponse {
 
     public String getCustomerName() { return customerName; }
     public void setCustomerName(String customerName) { this.customerName = customerName; }
+
+    public Float getOcrConfidence() { return ocrConfidence; }
+    public void setOcrConfidence(Float ocrConfidence) { this.ocrConfidence = ocrConfidence; }
 }

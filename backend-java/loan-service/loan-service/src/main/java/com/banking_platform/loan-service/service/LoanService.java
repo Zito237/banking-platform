@@ -91,6 +91,7 @@ public class LoanService {
     public LoanApplicationResponse createLoanApplication(LoanRequest request) {
         LoanApplication application = new LoanApplication();
         application.setCustomerId(request.getCustomerId());
+        application.setOperatorId(request.getOperatorId());
         application.setRequestedAmount(request.getRequestedAmount());
         application.setPurpose(request.getPurpose());
         // status = SUBMITTED par défaut
@@ -324,6 +325,7 @@ public class LoanService {
         LoanApplicationResponse response = new LoanApplicationResponse();
         response.setId(app.getId());
         response.setCustomerId(app.getCustomerId());
+        response.setOperatorId(app.getOperatorId());
         response.setRequestedAmount(app.getRequestedAmount());
         response.setPurpose(app.getPurpose());
         response.setStatus(app.getStatus().name());
