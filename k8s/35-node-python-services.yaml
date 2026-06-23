@@ -1,0 +1,236 @@
+# =============================================================================
+# Services Node.js (NestJS) et Python (FastAPI)
+# =============================================================================
+
+# --- Notification Service — NestJS (9002) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: notification-service
+  template:
+    metadata:
+      labels:
+        app: notification-service
+    spec:
+      containers:
+        - name: notification-service
+          image: finpay/notification-service:latest
+          ports:
+            - containerPort: 9002
+          env:
+            - name: PORT
+              value: "9002"
+            - name: RABBITMQ_URL
+              value: amqp://guest:guest@rabbitmq:5672
+            - name: RABBITMQ_EXCHANGE
+              value: banking.events
+          readinessProbe:
+            httpGet: { path: /health, port: 9002 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 9002 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits:   { memory: "256Mi", cpu: "300m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: finpay
+spec:
+  selector:
+    app: notification-service
+  ports:
+    - port: 9002
+
+---
+# --- Audit Service — NestJS (9003) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: audit-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: audit-service
+  template:
+    metadata:
+      labels:
+        app: audit-service
+    spec:
+      containers:
+        - name: audit-service
+          image: finpay/audit-service:latest
+          ports:
+            - containerPort: 9003
+          env:
+            - name: PORT
+              value: "9003"
+            - name: RABBITMQ_URL
+              value: amqp://guest:guest@rabbitmq:5672
+            - name: RABBITMQ_EXCHANGE
+              value: banking.events
+            - name: DATA_DIR
+              value: /data/audit
+          volumeMounts:
+            - name: audit-data
+              mountPath: /data/audit
+          readinessProbe:
+            httpGet: { path: /health, port: 9003 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health, port: 9003 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits:   { memory: "256Mi", cpu: "300m" }
+      volumes:
+        - name: audit-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: audit-service
+  namespace: finpay
+spec:
+  selector:
+    app: audit-service
+  ports:
+    - port: 9003
+
+---
+# --- Reporting Service — Python FastAPI (9004) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: reporting-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: reporting-service
+  template:
+    metadata:
+      labels:
+        app: reporting-service
+    spec:
+      containers:
+        - name: reporting-service
+          image: finpay/reporting-service:latest
+          ports:
+            - containerPort: 9004
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: guest
+            - name: RABBITMQ_PASS
+              value: guest
+            - name: RABBITMQ_EXCHANGE
+              value: banking.events
+            - name: DATABASE_PATH
+              value: /data/reporting.db
+          volumeMounts:
+            - name: reporting-data
+              mountPath: /data
+          readinessProbe:
+            httpGet: { path: /api/health, port: 9004 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: 9004 }
+            initialDelaySeconds: 20
+            periodSeconds: 15
+          resources:
+            requests: { memory: "128Mi", cpu: "100m" }
+            limits:   { memory: "256Mi", cpu: "300m" }
+      volumes:
+        - name: reporting-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: reporting-service
+  namespace: finpay
+spec:
+  selector:
+    app: reporting-service
+  ports:
+    - port: 9004
+
+---
+# --- OCR Service — Python FastAPI + Tesseract (9001) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ocr-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ocr-service
+  template:
+    metadata:
+      labels:
+        app: ocr-service
+    spec:
+      containers:
+        - name: ocr-service
+          image: finpay/ocr-service:latest
+          ports:
+            - containerPort: 9001
+          env:
+            - name: RABBITMQ_HOST
+              value: rabbitmq
+            - name: RABBITMQ_PORT
+              value: "5672"
+            - name: RABBITMQ_USER
+              value: guest
+            - name: RABBITMQ_PASS
+              value: guest
+            - name: RABBITMQ_EXCHANGE
+              value: banking.events
+            - name: TESSERACT_CMD
+              value: /usr/bin/tesseract
+          readinessProbe:
+            httpGet: { path: /api/health, port: 9001 }
+            initialDelaySeconds: 15
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /api/health, port: 9001 }
+            initialDelaySeconds: 30
+            periodSeconds: 15
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ocr-service
+  namespace: finpay
+spec:
+  selector:
+    app: ocr-service
+  ports:
+    - port: 9001

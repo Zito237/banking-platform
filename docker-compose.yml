@@ -1,6 +1,8 @@
 # =============================================================================
-# FinPay — Docker Compose complet
+# FinPay — Docker Compose complet (PostgreSQL)
+#
 # Lance l'intégralité de la plateforme bancaire en conteneurs.
+# Chaque microservice Java dispose de sa propre base PostgreSQL.
 #
 # Usage :
 #   docker compose up --build        # Premier lancement (compile les images)
@@ -14,20 +16,37 @@ networks:
     driver: bridge
 
 volumes:
+  postgres-data:
   rabbitmq-data:
-  data-auth:
-  data-operator:
-  data-account:
-  data-customer:
-  data-transaction:
-  data-loan:
-  data-audit:
-  data-reporting:
 
 services:
 
   # ===========================================================================
-  # 1. RabbitMQ — Bus de messages asynchrones
+  # PostgreSQL — Base de données partagée (une BD par service)
+  # ===========================================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: finpay-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: finpay
+      POSTGRES_PASSWORD: finpay_secret
+      POSTGRES_DB: finpay
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U finpay"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - finpay-network
+    restart: unless-stopped
+
+  # ===========================================================================
+  # RabbitMQ — Bus de messages asynchrones
   # ===========================================================================
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
@@ -51,7 +70,7 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # 2. Discovery Server (Eureka) — Annuaire des services
+  # Discovery Server (Eureka) — Annuaire des services
   # ===========================================================================
   discovery-server:
     build:
@@ -70,7 +89,7 @@ services:
       start_period: 40s
 
   # ===========================================================================
-  # 3. Config Server — Configuration centralisée
+  # Config Server — Configuration centralisée
   # ===========================================================================
   config-server:
     build:
@@ -99,7 +118,7 @@ services:
       start_period: 40s
 
   # ===========================================================================
-  # 4. Auth Service — Authentification & JWT
+  # Auth Service — Authentification & JWT
   # ===========================================================================
   auth-service:
     build:
@@ -111,25 +130,26 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       EUREKA_INSTANCE_HOSTNAME: auth-service
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/auth/authdb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-      SPRING_DATASOURCE_USERNAME: au
-      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/authdb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: finpay
+      SPRING_DATASOURCE_PASSWORD: finpay_secret
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_RABBITMQ_HOST: rabbitmq
-    volumes:
-      - data-auth:/data/auth
     depends_on:
       config-server:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - finpay-network
     restart: unless-stopped
 
   # ===========================================================================
-  # 5. Operator Service — Gestion des opérateurs bancaires
+  # Operator Service — Gestion des opérateurs bancaires
   # ===========================================================================
   operator-service:
     build:
@@ -141,25 +161,26 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       EUREKA_INSTANCE_HOSTNAME: operator-service
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/operator/operatordb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-      SPRING_DATASOURCE_USERNAME: op
-      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/operatordb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: finpay
+      SPRING_DATASOURCE_PASSWORD: finpay_secret
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_RABBITMQ_HOST: rabbitmq
-    volumes:
-      - data-operator:/data/operator
     depends_on:
       config-server:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - finpay-network
     restart: unless-stopped
 
   # ===========================================================================
-  # 6. Account Service — Comptes bancaires
+  # Account Service — Comptes bancaires
   # ===========================================================================
   account-service:
     build:
@@ -171,25 +192,26 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       EUREKA_INSTANCE_HOSTNAME: account-service
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/account/accountdb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-      SPRING_DATASOURCE_USERNAME: ac
-      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/accountdb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: finpay
+      SPRING_DATASOURCE_PASSWORD: finpay_secret
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_RABBITMQ_HOST: rabbitmq
-    volumes:
-      - data-account:/data/account
     depends_on:
       config-server:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - finpay-network
     restart: unless-stopped
 
   # ===========================================================================
-  # 7. Customer Service — Profils clients & KYC
+  # Customer Service — Profils clients & KYC
   # ===========================================================================
   customer-service:
     build:
@@ -201,25 +223,26 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       EUREKA_INSTANCE_HOSTNAME: customer-service
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/customer/customerdb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-      SPRING_DATASOURCE_USERNAME: cu
-      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/customerdb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: finpay
+      SPRING_DATASOURCE_PASSWORD: finpay_secret
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_RABBITMQ_HOST: rabbitmq
-    volumes:
-      - data-customer:/data/customer
     depends_on:
       config-server:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - finpay-network
     restart: unless-stopped
 
   # ===========================================================================
-  # 8. Transaction Service — Opérations financières
+  # Transaction Service — Opérations financières
   # ===========================================================================
   transaction-service:
     build:
@@ -231,25 +254,26 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       EUREKA_INSTANCE_HOSTNAME: transaction-service
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/transaction/transactiondb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-      SPRING_DATASOURCE_USERNAME: tr
-      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/transactiondb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: finpay
+      SPRING_DATASOURCE_PASSWORD: finpay_secret
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_RABBITMQ_HOST: rabbitmq
-    volumes:
-      - data-transaction:/data/transaction
     depends_on:
       config-server:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - finpay-network
     restart: unless-stopped
 
   # ===========================================================================
-  # 9. Loan Service — Prêts et remboursements
+  # Loan Service — Prêts et remboursements
   # ===========================================================================
   loan-service:
     build:
@@ -261,25 +285,26 @@ services:
       SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
       EUREKA_INSTANCE_HOSTNAME: loan-service
-      SPRING_DATASOURCE_URL: jdbc:h2:file:/data/loan/loandb;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
-      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
-      SPRING_DATASOURCE_USERNAME: lo
-      SPRING_DATASOURCE_PASSWORD: ""
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/loandb
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_DATASOURCE_USERNAME: finpay
+      SPRING_DATASOURCE_PASSWORD: finpay_secret
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.PostgreSQLDialect
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
       SPRING_RABBITMQ_HOST: rabbitmq
-    volumes:
-      - data-loan:/data/loan
     depends_on:
       config-server:
         condition: service_healthy
       rabbitmq:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
     networks:
       - finpay-network
     restart: unless-stopped
 
   # ===========================================================================
-  # 10. API Gateway — Point d'entrée unique
+  # API Gateway — Point d'entrée unique
   # ===========================================================================
   api-gateway:
     build:
@@ -305,7 +330,7 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # 11. Notification Service — NestJS
+  # Notification Service — NestJS
   # ===========================================================================
   notification-service:
     build:
@@ -325,7 +350,7 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # 12. Audit Service — NestJS (journal d'audit)
+  # Audit Service — NestJS (journal d'audit)
   # ===========================================================================
   audit-service:
     build:
@@ -339,7 +364,7 @@ services:
       RABBITMQ_EXCHANGE: banking.events
       DATA_DIR: /data/audit
     volumes:
-      - data-audit:/data/audit
+      - ./data/audit:/data/audit
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -348,7 +373,7 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # 13. Reporting Service — Python FastAPI
+  # Reporting Service — Python FastAPI
   # ===========================================================================
   reporting-service:
     build:
@@ -364,7 +389,7 @@ services:
       RABBITMQ_EXCHANGE: banking.events
       DATABASE_PATH: /data/reporting.db
     volumes:
-      - data-reporting:/data
+      - ./data/reporting:/data
     depends_on:
       rabbitmq:
         condition: service_healthy
@@ -373,7 +398,7 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # 14. OCR Service — Python FastAPI + Tesseract
+  # OCR Service — Python FastAPI + Tesseract
   # ===========================================================================
   ocr-service:
     build:
@@ -396,7 +421,7 @@ services:
     restart: unless-stopped
 
   # ===========================================================================
-  # 15. Frontend — React (servi par nginx)
+  # Frontend — React (servi par nginx)
   # ===========================================================================
   frontend:
     build:

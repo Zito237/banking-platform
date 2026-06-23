@@ -1,0 +1,349 @@
+# =============================================================================
+# Microservices Java Spring Boot (6 services métier)
+# account-service et api-gateway ont replicas=2
+# =============================================================================
+
+# --- Auth Service (8081) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+    spec:
+      containers:
+        - name: auth-service
+          image: finpay/auth-service:latest
+          ports:
+            - containerPort: 8081
+          envFrom:
+            - configMapRef:
+                name: finpay-common-config
+            - secretRef:
+                name: finpay-db-secret
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: optional:configserver:http://config-server:8888
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/authdb
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: auth-service
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8081
+            initialDelaySeconds: 80
+            periodSeconds: 15
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: finpay
+spec:
+  selector:
+    app: auth-service
+  ports:
+    - port: 8081
+
+---
+# --- Operator Service (8082) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: operator-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: operator-service
+  template:
+    metadata:
+      labels:
+        app: operator-service
+    spec:
+      containers:
+        - name: operator-service
+          image: finpay/operator-service:latest
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: finpay-common-config
+            - secretRef:
+                name: finpay-db-secret
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: optional:configserver:http://config-server:8888
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/operatordb
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: operator-service
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8082 }
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8082 }
+            initialDelaySeconds: 80
+            periodSeconds: 15
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: operator-service
+  namespace: finpay
+spec:
+  selector:
+    app: operator-service
+  ports:
+    - port: 8082
+
+---
+# --- Account Service (8083) — replicas: 2 ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: account-service
+  namespace: finpay
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: account-service
+  template:
+    metadata:
+      labels:
+        app: account-service
+    spec:
+      containers:
+        - name: account-service
+          image: finpay/account-service:latest
+          ports:
+            - containerPort: 8083
+          envFrom:
+            - configMapRef:
+                name: finpay-common-config
+            - secretRef:
+                name: finpay-db-secret
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: optional:configserver:http://config-server:8888
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/accountdb
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: account-service
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8083 }
+            initialDelaySeconds: 80
+            periodSeconds: 15
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: account-service
+  namespace: finpay
+spec:
+  selector:
+    app: account-service
+  ports:
+    - port: 8083
+
+---
+# --- Customer Service (8084) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: customer-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: customer-service
+  template:
+    metadata:
+      labels:
+        app: customer-service
+    spec:
+      containers:
+        - name: customer-service
+          image: finpay/customer-service:latest
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: finpay-common-config
+            - secretRef:
+                name: finpay-db-secret
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: optional:configserver:http://config-server:8888
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/customerdb
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: customer-service
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8084 }
+            initialDelaySeconds: 80
+            periodSeconds: 15
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: customer-service
+  namespace: finpay
+spec:
+  selector:
+    app: customer-service
+  ports:
+    - port: 8084
+
+---
+# --- Transaction Service (8085) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: transaction-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: transaction-service
+  template:
+    metadata:
+      labels:
+        app: transaction-service
+    spec:
+      containers:
+        - name: transaction-service
+          image: finpay/transaction-service:latest
+          ports:
+            - containerPort: 8085
+          envFrom:
+            - configMapRef:
+                name: finpay-common-config
+            - secretRef:
+                name: finpay-db-secret
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: optional:configserver:http://config-server:8888
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/transactiondb
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: transaction-service
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8085 }
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8085 }
+            initialDelaySeconds: 80
+            periodSeconds: 15
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: transaction-service
+  namespace: finpay
+spec:
+  selector:
+    app: transaction-service
+  ports:
+    - port: 8085
+
+---
+# --- Loan Service (8086) ---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: loan-service
+  namespace: finpay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: loan-service
+  template:
+    metadata:
+      labels:
+        app: loan-service
+    spec:
+      containers:
+        - name: loan-service
+          image: finpay/loan-service:latest
+          ports:
+            - containerPort: 8086
+          envFrom:
+            - configMapRef:
+                name: finpay-common-config
+            - secretRef:
+                name: finpay-db-secret
+          env:
+            - name: SPRING_CONFIG_IMPORT
+              value: optional:configserver:http://config-server:8888
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:postgresql://postgres:5432/loandb
+            - name: EUREKA_INSTANCE_HOSTNAME
+              value: loan-service
+          readinessProbe:
+            httpGet: { path: /actuator/health, port: 8086 }
+            initialDelaySeconds: 40
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /actuator/health, port: 8086 }
+            initialDelaySeconds: 80
+            periodSeconds: 15
+          resources:
+            requests: { memory: "256Mi", cpu: "200m" }
+            limits:   { memory: "512Mi", cpu: "500m" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: loan-service
+  namespace: finpay
+spec:
+  selector:
+    app: loan-service
+  ports:
+    - port: 8086
