@@ -22,6 +22,7 @@ spec:
       containers:
         - name: auth-service
           image: finpay/auth-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8081
           envFrom:
@@ -83,6 +84,7 @@ spec:
       containers:
         - name: operator-service
           image: finpay/operator-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8082
           envFrom:
@@ -140,6 +142,7 @@ spec:
       containers:
         - name: account-service
           image: finpay/account-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8083
           envFrom:
@@ -197,6 +200,7 @@ spec:
       containers:
         - name: customer-service
           image: finpay/customer-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8084
           envFrom:
@@ -254,6 +258,7 @@ spec:
       containers:
         - name: transaction-service
           image: finpay/transaction-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8085
           envFrom:
@@ -311,6 +316,7 @@ spec:
       containers:
         - name: loan-service
           image: finpay/loan-service:latest
+          imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8086
           envFrom:

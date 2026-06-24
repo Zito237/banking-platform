@@ -1,7 +1,0 @@
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: finpay
-  labels:
-    app: finpay
-    version: "1.0"
