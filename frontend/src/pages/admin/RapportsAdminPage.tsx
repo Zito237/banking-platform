@@ -42,6 +42,17 @@ export default function RapportsAdminPage() {
     setLoadingData(true)
     setError('')
     try {
+      // Auto-sync: pull live data from Java APIs into reporting DB
+      try {
+        const [txResult, loanResult] = await Promise.allSettled([
+          api.get('/transactions/all'),
+          api.get('/loans'),
+        ])
+        const txData = txResult.status === 'fulfilled' ? txResult.value.data ?? [] : []
+        const loanData = loanResult.status === 'fulfilled' ? loanResult.value.data ?? [] : []
+        await reporting.post('/admin/backfill', { transactions: txData, loans: loanData })
+      } catch { /* sync failure non-critical */ }
+
       const [tx, loans] = await Promise.all([
         reporting.get('/reports/transactions'),
         reporting.get('/reports/loans'),
@@ -61,14 +72,8 @@ export default function RapportsAdminPage() {
     setSyncing(true)
     setSyncMsg('')
     try {
-      const txRes = await api.get('/transactions/all')
-      const transactions = txRes.data ?? []
-      let loans: unknown[] = []
-      try { const r = await api.get('/loans'); loans = r.data ?? [] } catch { /* optionnel */ }
-      const result = await reporting.post('/admin/backfill', { transactions, loans })
-      const { inserted_transactions, inserted_loans } = result.data
-      setSyncMsg(`Synchronisation réussie : ${inserted_transactions} transactions, ${inserted_loans} prêts importés.`)
       await fetchReports()
+      setSyncMsg('Données synchronisées avec succès.')
     } catch {
       setSyncMsg('Erreur lors de la synchronisation. Vérifiez que les services sont démarrés.')
     } finally {

@@ -72,17 +72,17 @@ export default function DocumentsPage() {
     setSubmitMsg('')
 
     try {
-      const { data: docData } = await api.post('/documents', {
-        customerId,
-        documentType,
-        fileUrl: `local:${selectedFile.name}`,
-      })
-
       const formData = new FormData()
       formData.append('file', selectedFile)
       const { data: ocrData } = await ocr.post('/ocr', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 30_000,
+      })
+
+      const { data: docData } = await api.post('/documents', {
+        customerId,
+        documentType,
+        fileUrl: ocrData.fileUrl || `local:${selectedFile.name}`,
       })
 
       await api.post(`/documents/${docData.id}/process`, {

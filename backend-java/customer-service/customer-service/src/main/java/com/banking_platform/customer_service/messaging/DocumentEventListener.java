@@ -57,24 +57,30 @@ public class DocumentEventListener {
             return;
         }
 
-        // Marque le document comme verifie
-        document.setVerified(true);
-        documentRepository.save(document);
-        logger.info("Document {} marque comme verifie", event.getDocumentId());
+        document.setOcrConfidence(event.getConfidence());
 
-        // Met a jour le KYC du client selon le score de confiance
+        // Met a jour le statut du document et le KYC du client selon le score de confiance
         var customer = customerRepository.findById(document.getCustomer().getId()).orElse(null);
-        if (customer != null) {
-            if (event.getConfidence() >= 0.7f) {
+        if (event.getConfidence() >= 0.7f) {
+            document.setVerified(true);
+            documentRepository.save(document);
+            logger.info("Document {} auto-valide (confidence={})", event.getDocumentId(), event.getConfidence());
+
+            if (customer != null) {
                 customer.setKycStatus(KycStatus.VERIFIED);
-                logger.info("KYC du client {} passe a VERIFIED (confidence={})",
-                        customer.getId(), event.getConfidence());
-            } else {
-                customer.setKycStatus(KycStatus.REJECTED);
-                logger.warn("KYC du client {} passe a REJECTED (confidence={})",
-                        customer.getId(), event.getConfidence());
+                customerRepository.save(customer);
+                logger.info("KYC du client {} passe a VERIFIED", customer.getId());
             }
-            customerRepository.save(customer);
+        } else {
+            document.setVerified(false);
+            documentRepository.save(document);
+            logger.info("Document {} en attente de revue admin (confidence={})", event.getDocumentId(), event.getConfidence());
+
+            if (customer != null) {
+                customer.setKycStatus(KycStatus.REJECTED);
+                customerRepository.save(customer);
+                logger.warn("KYC du client {} passe a REJECTED (confidence={})", customer.getId(), event.getConfidence());
+            }
         }
     }
 }
